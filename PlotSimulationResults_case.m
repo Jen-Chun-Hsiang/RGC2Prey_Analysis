@@ -1,6 +1,6 @@
 clear; clc;
 %% ——— User picks which experiment to plot ———
-exp_id = 9;  
+exp_id = 11;  
 % 1: Noise contribution to ON/OFF grid
 % 2: Temporal filter biphasic
 % 3: Surround inhibition
@@ -106,6 +106,15 @@ switch exp_id
         BG_folder     = repmat({'blend_'},1,length(Dates));
         LSTM_layer_n  = {'No fixed', '0.5', '2.0', '1.0', '4.0', '8.0'};
         plot_line_ids = [1:6];
+        fname_pattern = '%s_cricket_%snoise%s%s';
+
+    case 11
+        title_name    = '(Model) obersered predation results';
+        Dates         = {'2025080901', '2025080902'};
+        Noise_level   = {'0.0','0.002','0.004','0.008','0.016','0.032'};
+        BG_folder     = repmat({'blend_'},1,length(Dates));
+        LSTM_layer_n  = {'No fixed', '0.5'};
+        plot_line_ids = [1:2];
         fname_pattern = '%s_cricket_%snoise%s%s';
     
     otherwise
