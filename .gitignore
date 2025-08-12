@@ -1,0 +1,44 @@
+# MATLAB files
+*.asv
+*.m~
+*.mex*
+*.fig
+*.mat
+*.slx.autosave
+*.xlsx
+*.csv
+
+# Simulink files
+*.slxc
+*.mdl.autosave
+
+# Code generation folders
+codegen/
+slprj/
+
+# Cache files
+*.cache
+
+# Windows specific
+Thumbs.db
+desktop.ini
+
+*.png
+*.pt
+*.jpg
+*.pt
+*.pth
+*.mp4
+
+Results/Prints/
+Results/TimeEST/
+Results/Figures/
+Results/Videos/
+
+Summary/
+
+
+
+# VS Code specific
+.vscode/settings.json
+.vscode/launch.json
