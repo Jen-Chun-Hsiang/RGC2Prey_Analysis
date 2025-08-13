@@ -110,11 +110,11 @@ switch exp_id
 
     case 11
         title_name    = '(Model) obersered predation results';
-        Dates         = {'2025080901', '2025080902'};
+        Dates         = {'2025080901', '2025080902', '2025080903', '2025080904', '2025081001','2025081002'};
         Noise_level   = {'0.0','0.002','0.004','0.008','0.016','0.032'};
         BG_folder     = repmat({'blend_'},1,length(Dates));
-        LSTM_layer_n  = {'No fixed', '0.5'};
-        plot_line_ids = [1:2];
+        LSTM_layer_n  = {'ON-N', 'ON-T', 'OFF-N', 'OFF-T', 'ON-N (syn)', 'OFF-T (half)'};
+        plot_line_ids = [1:6];
         fname_pattern = '%s_cricket_%snoise%s%s';
     
     otherwise
