@@ -1,6 +1,6 @@
 clear; clc;
 %% ——— User picks which experiment to plot ———
-exp_id = 12;  
+exp_id = 16;  
 % 1: Noise contribution to ON/OFF grid
 % 2: Temporal filter biphasic
 % 3: Surround inhibition
@@ -126,6 +126,44 @@ switch exp_id
         plot_line_ids = [1:4];
         fname_pattern = '%s_cricket_%snoise%s%s';
     
+    case 13
+        title_name    = '(Model) obersered predation results (incorrect number)';
+        Dates         = {'2025082901', '2025082902', '2025082903', '2025082904'};
+        Noise_level   = {'0.0','0.002','0.004','0.008','0.016','0.032'};
+        BG_folder     = repmat({'blend_'},1,length(Dates));
+        LSTM_layer_n  = {'OFF-N', 'ON-T', 'OFF-T', 'ON-N'};
+        plot_line_ids = [1:4];
+        fname_pattern = '%s_cricket_%snoise%s%s';
+
+    case 14
+        title_name    = '(Model) obersered predation results';
+        Dates         = {'2025083101', '2025083104'};
+        Noise_level   = {'0.0','0.002','0.004','0.008','0.016','0.032'};
+        BG_folder     = repmat({'blend_'},1,length(Dates));
+        LSTM_layer_n  = {'OFF-N', 'ON-T', 'OFF-T', 'ON-N'};
+        plot_line_ids = [1];
+        fname_pattern = '%s_cricket_%snoise%s%s';
+    
+    case 15
+        title_name    = '(Model) obersered predation results';
+        Dates         = {'2025091201', '2025091202', '2025091203', '2025091204', '2025091501', '2025091502', '2025091503',};  %, 
+        % Noise_level   = {'0.0','0.002','0.004','0.008','0.016','0.032'};
+        Noise_level   = {'0.0','0.016','0.032','0.064','0.128','0.256'};
+        BG_folder     = repmat({'blend_'},1,length(Dates));
+        LSTM_layer_n  = {'OFF-N', 'ON-T', 'OFF-T', 'ON-N', 'OFF-N (2)', 'ON-T (2)', 'OFF-T (2)'};
+        plot_line_ids = [1:7];
+        fname_pattern = '%s_cricket_%snoise%s%s';
+
+    case 16
+        title_name    = '(Model) obersered predation results';
+        Dates         = {'2025091501', '2025091502', '2025091503', '2025091504', '2025091505', '2025091506', '2025091507'};  %, 
+        % Noise_level   = {'0.0','0.002','0.004','0.008','0.016','0.032'};
+        Noise_level   = {'0.016','0.032','0.064','0.128','0.256'};
+        BG_folder     = repmat({'blend_'},1,length(Dates));
+        LSTM_layer_n  = {'OFF-N', 'ON-T', 'OFF-T', 'ON-N', 'ON-T (-0.006)', 'ON-T (-0.18)', 'ON-T (-0.36)'};
+        plot_line_ids = [2 5:7];
+        fname_pattern = '%s_cricket_%snoise%s%s';
+    
     otherwise
         error('exp_id must be 1, 2 or 3');
 end
@@ -138,6 +176,7 @@ N_levels = numel(Noise_level);
 Data_m = nan(N_days, N_levels);
 Data_s = nan(N_days, N_levels);
 Data_t = nan(N_days, n_epoch);
+Data_n = nan(N_days, N_levels);
 
 for i = 1:N_days
     for j = 1:N_levels
@@ -150,6 +189,7 @@ for i = 1:N_days
         fname = sprintf(fname_pattern, Dates{i}, bg, Noise_level{j}, Tag);
         load(fullfile(Folder_Name, fname), 'test_losses', 'training_losses');
         n_sample      = numel(test_losses);
+        Data_n(i, j)  = n_sample;
         Data_m(i, j)  = mean(test_losses);
         Data_s(i, j)  = std(test_losses)/sqrt(n_sample);
     end

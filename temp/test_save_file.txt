@@ -1,0 +1,4 @@
+PlayerName:Alex
+Score:1250
+Level:5
+Inventory:sword,shield,health potion
