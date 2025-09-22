@@ -28,11 +28,11 @@ bg_type = 'blend'; % or 'grass'
 
 exp_name = '2025091502';
 noise_level = '0.016';
-[all_paths_r, all_paths_pred_r, seqLen] = loadDataset(mat_folder, exp_name, bg_type, noise_level);
+[all_paths_r, all_paths_pred_r, seqLen, is_simple_contrast] = loadDataset(mat_folder, exp_name, bg_type, noise_level);
 
 %% Single trial visualization (original functionality)
 trial_id = 1; % Change this to visualize different trials
-real_dim = [220 140]*4.375/0.54;
+real_dim = [240 180]*4.375/0.54;
 figure; 
 subplot(1, 2, 1)
 plot(all_paths_r(trial_id, :, 1)*real_dim(1), all_paths_r(trial_id, :, 2)*real_dim(2), '-b.'); hold on;
@@ -40,7 +40,7 @@ plot(all_paths_pred_r(trial_id, :, 1)*real_dim(1), all_paths_pred_r(trial_id, :,
 xlabel('X Position'); ylabel('Y Position'); title('Cricket Location Prediction');
 legend('True Path', 'Predicted Path');
 
-subplot(1, 2, 2);
+subplot(1, 2, 2); hold on;
 error_distance = sqrt(sum((all_paths_r(trial_id, :, :).*reshape(real_dim, [1 1 2]) - all_paths_pred_r(trial_id, :, :).*reshape(real_dim, [1 1 2])).^2, 3));
 
 % Calculate cross-correlation for this trial
@@ -49,13 +49,17 @@ pred_path_trial = squeeze(all_paths_pred_r(trial_id, :, :)) .* reshape(real_dim,
 [max_xcorr, shift_value] = calculateMaxCrossCorrelation(true_path_trial, pred_path_trial);
 
 % Calculate fixed-shift correlation for this trial
-fixed_shift = -5;
+fixed_shift = -9;
 fixed_corr = calculateFixedShiftCorrelation(true_path_trial, pred_path_trial, fixed_shift);
 
 % Calculate fixed-shift RMS error for this trial
 fixed_rms = calculateFixedShiftRMSError(squeeze(all_paths_r(trial_id, :, :)), squeeze(all_paths_pred_r(trial_id, :, :)), fixed_shift, real_dim);
 
+shift_val = 0;
+[velocity_true, velocity_pred] = calculateVelocity(squeeze(all_paths_r(trial_id, :, :)), squeeze(all_paths_pred_r(trial_id, :, :)), shift_val, real_dim);
 plot(1:seqLen, error_distance, 'm-');
+plot(1:numel(fixed_rms), fixed_rms, 'k-');
+plot(1:numel(velocity_true), velocity_true, 'b-');
 xlabel('Time steps'); ylabel('Error distance (um)'); 
 title(sprintf('Single Trial Error\nXCorr: %.3f, Shift: %d, FixedCorr(%.0f): %.3f\nFixedRMS(%.0f): %.1f', max_xcorr, shift_value, fixed_shift, fixed_corr, fixed_shift, fixed_rms));
 
@@ -119,8 +123,8 @@ sem_fixed_rms = std(all_fixed_rms, [], 1) / sqrt(max(1, n_trials));
 
 colors = lines(2);
 figure;
+subplot(1, 3, 1); hold on;
 x = (0:numel(mean_err)-1)/100;
-subplot(1, 2, 1)
 shadePlot(x, mean_err, sem_err, colors(1, :));
 x = (0:numel(mean_fixed_rms)-1)/100;
 shadePlot(x, mean_fixed_rms, sem_fixed_rms, colors(2, :));
@@ -129,6 +133,33 @@ xlabel('Time (s)');
 ylabel('Error distance (um)');
 title('Mean prediction error with SEM shaded');
 
+subplot(1, 3, 2); hold on;
+yr = mean(all_err_dist(is_simple_contrast, :), 1);
+x = (0:numel(yr)-1)/100;
+sr = std(all_err_dist(is_simple_contrast, :), 0, 1) ./ sqrt(max(1, numel(yr)));
+shadePlot(x, yr, sr, colors(1, :));
+yr = mean(all_err_dist(~is_simple_contrast, :), 1);
+x = (0:numel(yr)-1)/100;
+sr = std(all_err_dist(~is_simple_contrast, :), 0, 1) ./ sqrt(max(1, numel(yr)));
+shadePlot(x, yr, sr, colors(2, :));
+ylim([0 1000])
+xlabel('Time (s)');
+ylabel('Error distance (um)');
+title('Background difference in prediction error with SEM shaded');
+
+subplot(1, 3, 3); hold on;
+yr = mean(all_fixed_rms(is_simple_contrast, :), 1);
+x = (0:numel(yr)-1)/100;
+sr = std(all_fixed_rms(is_simple_contrast, :), 0, 1) ./ sqrt(max(1, numel(yr)));
+shadePlot(x, yr, sr, colors(1, :));
+yr = mean(all_fixed_rms(~is_simple_contrast, :), 1);
+x = (0:numel(yr)-1)/100;
+sr = std(all_fixed_rms(~is_simple_contrast, :), 0, 1) ./ sqrt(max(1, numel(yr)));
+shadePlot(x, yr, sr, colors(2, :));
+ylim([0 1000])
+xlabel('Time (s)');
+ylabel('Error distance (um)');
+title('Background difference in fixed-shift RMS error with SEM shaded');
 %%
 return
 
@@ -156,7 +187,7 @@ hold off;
 
 %% ========== FUNCTIONS ==========
 
-function [all_paths_r, all_paths_pred_r, seqLen] = loadDataset(mat_folder, exp_name, bg_type, noise_level)
+function [all_paths_r, all_paths_pred_r, seqLen, is_simple_contrast] = loadDataset(mat_folder, exp_name, bg_type, noise_level)
     % Load and process a single dataset
     % Inputs:
     %   mat_folder: path to the folder containing .mat files
@@ -181,6 +212,7 @@ function [all_paths_r, all_paths_pred_r, seqLen] = loadDataset(mat_folder, exp_n
     
     [all_paths_r, seqLen] = reshapeAllPaths(data.all_paths);
     all_paths_pred_r = squeeze(data.all_paths_pred);
+    is_simple_contrast = cellfun(@(x) contains(x, 'gray_image'), data.all_bg_file);
     
     assert(isequal(size(all_paths_r), size(all_paths_pred_r)), ...
            'Reshaped paths and predicted paths must have the same dimensions');
@@ -489,3 +521,58 @@ function [rms_error, error_len] = calculateFixedShiftRMSError(true_path, pred_pa
     error_len = length(rms_error);
 end
 
+% ...existing code...
+function [velocity_true, velocity_pred, error_len] = calculateVelocity(true_path, pred_path, shift_val, real_dim)
+    % calculateVelocity - Compute velocity (step) vectors after optional fixed shift
+    % Inputs:
+    %   true_path: [T x 2] true coordinates
+    %   pred_path: [T x 2] predicted coordinates
+    %   shift_val: integer shift (positive = pred leads true)
+    %   real_dim: [1x2] scaling factors for x and y
+    % Outputs:
+    %   rms_error: [(T_shifted-1) x 1] RMS error per timestep comparing step vectors
+    %   error_len: length of rms_error
+    %
+    % This computes movement vectors between consecutive points (current - previous)
+    % for true and predicted paths, then returns the euclidean norm of their difference
+    % at each time point after applying the specified fixed shift.
+    
+    % Scale paths to real dimensions
+    true_scaled = true_path .* reshape(real_dim, [1 2]);
+    pred_scaled = pred_path .* reshape(real_dim, [1 2]);
+    
+    % Apply fixed shift (same convention as other functions)
+    if shift_val > 0
+        true_shifted = true_scaled((shift_val+1):end, :);
+        pred_shifted = pred_scaled(1:(end-shift_val), :);
+    elseif shift_val < 0
+        s = abs(shift_val);
+        true_shifted = true_scaled(1:(end-s), :);
+        pred_shifted = pred_scaled((s+1):end, :);
+    else
+        true_shifted = true_scaled;
+        pred_shifted = pred_scaled;
+    end
+    
+    % Need at least two points to form step vectors
+    if size(true_shifted,1) < 2 || size(pred_shifted,1) < 2
+        velocity = NaN;
+        error_len = 0;
+        return;
+    end
+    
+    % Compute step (delta) vectors: current - previous
+    true_steps = diff(true_shifted, 1, 1);   % (T_shifted-1) x 2
+    pred_steps = diff(pred_shifted, 1, 1);   % (T_shifted-1) x 2
+
+    % If lengths mismatch (shouldn't after shifting) trim to common length
+    n = min(size(true_steps,1), size(pred_steps,1));
+    true_steps = true_steps(1:n, :);
+    pred_steps = pred_steps(1:n, :);
+    
+    % RMS error per timestep comparing the step vectors
+    velocity_true = sqrt(sum((true_steps).^2, 2));
+    velocity_pred = sqrt(sum((pred_steps).^2, 2));
+    error_len = numel(velocity_true);
+end
+% ...existing code...
