@@ -27,9 +27,9 @@ mat_folder = '\\storage1.ris.wustl.edu\kerschensteinerd\Active\Emily\RISserver\R
 bg_type = 'blend'; % or 'grass'
 
 exp_name = '2025091502';
-noise_level = '0.256';
+noise_level = '0.016';
 is_correct_object_zone = 0;
-[all_paths_r, all_paths_pred_r, seqLen, is_simple_contrast, all_id_numbers, all_scaling_factors] = loadDataset(mat_folder, exp_name, bg_type, noise_level);
+[all_paths_r, all_paths_pred_r, seqLen, is_simple_contrast, all_id_numbers, all_scaling_factors, all_path_cm] = loadDataset(mat_folder, exp_name, bg_type, noise_level);
 
 load_mat_folder = '\\storage1.ris.wustl.edu\kerschensteinerd\Active\Emily\RISserver\RGC2Prey\';  % folder to save output MAT file
 coverage_mat_file = fullfile(load_mat_folder, 'processed_cover_radius.mat');
@@ -38,7 +38,8 @@ cover_radius = [cover_radius.file_index_list(:) cover_radius.processed_cover_rad
 
 %% Single trial visualization (original functionality)
 trial_id = 1; % Change this to visualize different trials
-real_dim = [240 180]*4.375/0.54;
+%real_dim = [240 180]*4.375/0.54;
+real_dim = [120 90]*4.375/0.54;
 figure; 
 subplot(1, 2, 1)
 plot(all_paths_r(trial_id, :, 1)*real_dim(1), all_paths_r(trial_id, :, 2)*real_dim(2), '-b.'); hold on;
@@ -85,7 +86,7 @@ for i = 1:size(all_paths_r, 1)
     % Extract trial data
     true_path_trial = squeeze(all_paths_r(i, :, :));
     pred_path_trial = squeeze(all_paths_pred_r(i, :, :));
-    pred_cm_path_trial = squeeze(all_paths_pred_r(i, :, :));
+    pred_cm_path_trial = squeeze(all_path_cm(i, :, :));
     cut_off = acceptance_zone_radius(double(all_id_numbers(i)), all_scaling_factors(i, 50:end), cover_radius, 0);
     
     % Calculate RMS error using separate function
@@ -112,6 +113,7 @@ for i = 1:size(all_paths_r, 1)
     if i == 1
         seqLen = rms_len; % Update seqLen based on actual RMS error length
         all_fixed_rms = zeros(size(all_paths_r, 1), seqLen);
+        all_fixed_cm_rms = zeros(size(all_path_cm, 1), seqLen);
         all_fixed_rms_cutoff = zeros(size(all_paths_r, 1), seqLen);
     end
     all_fixed_rms(i, :) = fixed_rms;
@@ -120,8 +122,13 @@ for i = 1:size(all_paths_r, 1)
     end
     all_fixed_rms_cutoff(i, :) = max(0, fixed_rms' - cut_off);
 
-    [fixed_rms, rms_len] = calculateFixedShiftRMSError(true_path_trial, pred_path_trial, fixed_shift, real_dim);
-    
+
+    [fixed_cm_rms, ~] = calculateFixedShiftRMSError(true_path_scaled, pred_cm_path_trial* 4.375 / 0.54, fixed_shift, ones(1, 2));
+    all_fixed_cm_rms(i, :) = fixed_cm_rms;
+    if is_correct_object_zone
+        all_fixed_cm_rms(i, :) = max(0, all_fixed_cm_rms(i, :)  - cut_off);
+    end
+
 end
 
 % Calculate statistics for each metric
@@ -144,10 +151,12 @@ sem_fixed_rms = std(all_fixed_rms, [], 1) / sqrt(max(1, n_trials));
 mean_fixed_rms_cutoff = mean(all_fixed_rms_cutoff, 1);
 sem_fixed_rms_cutoff = std(all_fixed_rms_cutoff, [], 1) / sqrt(max(1, n_trials));
 
+mean_fixed_cm_rms = mean(all_fixed_cm_rms, 1);
+sem_fixed_cm_rms = std(all_fixed_cm_rms, [], 1) / sqrt(max(1, n_trials));
 
 %%
 
-colors = lines(3);
+colors = lines(4);
 figure;
 subplot(1, 3, 1); hold on;
 x = (0:numel(mean_err)-1)/100;
@@ -156,7 +165,10 @@ x = (0:numel(mean_fixed_rms)-1)/100;
 shadePlot(x, mean_fixed_rms, sem_fixed_rms, colors(2, :));
 x = (0:numel(mean_fixed_rms_cutoff)-1)/100;
 shadePlot(x, mean_fixed_rms_cutoff, sem_fixed_rms_cutoff, colors(3, :));
-ylim([0 1000])
+x = (0:numel(mean_fixed_cm_rms)-1)/100;
+shadePlot(x, mean_fixed_cm_rms, sem_fixed_cm_rms, colors(4, :));
+
+% ylim([0 1000])
 xlabel('Time (s)');
 ylabel('Error distance (um)');
 title('Mean prediction error with SEM shaded');
@@ -215,7 +227,7 @@ hold off;
 
 %% ========== FUNCTIONS ==========
 
-function [all_paths_r, all_paths_pred_r, seqLen, is_simple_contrast, all_id_numbers, all_scaling_factors] = loadDataset(mat_folder, exp_name, bg_type, noise_level)
+function [all_paths_r, all_paths_pred_r, seqLen, is_simple_contrast, all_id_numbers, all_scaling_factors, all_path_cm] = loadDataset(mat_folder, exp_name, bg_type, noise_level)
     % Load and process a single dataset
     % Inputs:
     %   mat_folder: path to the folder containing .mat files
@@ -238,6 +250,7 @@ function [all_paths_r, all_paths_pred_r, seqLen, is_simple_contrast, all_id_numb
     fprintf('Loading: %s\n', filename);
     data = load(filepath);
     [all_paths_r, seqLen] = reshapeAllPaths(data.all_paths);
+    all_path_cm = reshapeAllPaths(double(data.all_path_cm));
     all_paths_pred_r = squeeze(data.all_paths_pred);
     is_simple_contrast = cellfun(@(x) contains(x, 'gray_image'), data.all_bg_file);
     all_id_numbers = data.all_id_numbers;
