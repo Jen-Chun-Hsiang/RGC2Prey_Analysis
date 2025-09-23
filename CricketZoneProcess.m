@@ -12,7 +12,7 @@ load_mat_file_name = 'selected_points_summary_body.mat';   % MAT file that conta
 save_mat_folder = '\\storage1.ris.wustl.edu\kerschensteinerd\Active\Emily\RISserver\RGC2Prey\';  % folder to save output MAT file
 target_cover_perc = 0.85;
 % Output MAT that will contain variables/fields starting with 'processed_'
-out_mat_file = fullfile(load_png_folder, 'processed_cover_radius.mat');
+out_mat_file = fullfile(save_mat_folder, 'processed_cover_radius.mat');
 
 % Find png files matching processed_x.png
 png_files = dir(fullfile(load_png_folder, 'processed_*.png'));

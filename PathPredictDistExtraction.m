@@ -27,8 +27,14 @@ mat_folder = '\\storage1.ris.wustl.edu\kerschensteinerd\Active\Emily\RISserver\R
 bg_type = 'blend'; % or 'grass'
 
 exp_name = '2025091502';
-noise_level = '0.016';
-[all_paths_r, all_paths_pred_r, seqLen, is_simple_contrast] = loadDataset(mat_folder, exp_name, bg_type, noise_level);
+noise_level = '0.256';
+is_correct_object_zone = 0;
+[all_paths_r, all_paths_pred_r, seqLen, is_simple_contrast, all_id_numbers, all_scaling_factors] = loadDataset(mat_folder, exp_name, bg_type, noise_level);
+
+load_mat_folder = '\\storage1.ris.wustl.edu\kerschensteinerd\Active\Emily\RISserver\RGC2Prey\';  % folder to save output MAT file
+coverage_mat_file = fullfile(load_mat_folder, 'processed_cover_radius.mat');
+cover_radius = load(coverage_mat_file, 'file_index_list', 'processed_cover_radius');
+cover_radius = [cover_radius.file_index_list(:) cover_radius.processed_cover_radius(:)];
 
 %% Single trial visualization (original functionality)
 trial_id = 1; % Change this to visualize different trials
@@ -71,6 +77,7 @@ all_shifts = zeros(size(all_paths_r, 1), 1);
 all_fixed_corr = zeros(size(all_paths_r, 1), 1);
 
 
+
 % Fixed shift value for correlation coefficient calculation
 fixed_shift = -9;
 
@@ -78,10 +85,18 @@ for i = 1:size(all_paths_r, 1)
     % Extract trial data
     true_path_trial = squeeze(all_paths_r(i, :, :));
     pred_path_trial = squeeze(all_paths_pred_r(i, :, :));
+    pred_cm_path_trial = squeeze(all_paths_pred_r(i, :, :));
+    cut_off = acceptance_zone_radius(double(all_id_numbers(i)), all_scaling_factors(i, 50:end), cover_radius, 0);
     
     % Calculate RMS error using separate function
     all_err_dist(i, :) = calculateRMSError(true_path_trial, pred_path_trial, real_dim);
+    if is_correct_object_zone
+        all_err_dist(i, :) = max(0, all_err_dist(i, :)  - cut_off);
+    end
     
+    cut_off = acceptance_zone_radius(double(all_id_numbers(i)), all_scaling_factors(i, 50:end), cover_radius, fixed_shift);
+    
+
     % Scale paths for correlation calculations
     true_path_scaled = true_path_trial .* reshape(real_dim, [1 2]);
     pred_path_scaled = pred_path_trial .* reshape(real_dim, [1 2]);
@@ -97,8 +112,16 @@ for i = 1:size(all_paths_r, 1)
     if i == 1
         seqLen = rms_len; % Update seqLen based on actual RMS error length
         all_fixed_rms = zeros(size(all_paths_r, 1), seqLen);
+        all_fixed_rms_cutoff = zeros(size(all_paths_r, 1), seqLen);
     end
     all_fixed_rms(i, :) = fixed_rms;
+    if is_correct_object_zone
+        all_fixed_rms(i, :) = max(0, all_fixed_rms(i, :)  - cut_off);
+    end
+    all_fixed_rms_cutoff(i, :) = max(0, fixed_rms' - cut_off);
+
+    [fixed_rms, rms_len] = calculateFixedShiftRMSError(true_path_trial, pred_path_trial, fixed_shift, real_dim);
+    
 end
 
 % Calculate statistics for each metric
@@ -118,16 +141,21 @@ sem_fixed_corr = std(all_fixed_corr) / sqrt(max(1, n_trials));
 mean_fixed_rms = mean(all_fixed_rms, 1);
 sem_fixed_rms = std(all_fixed_rms, [], 1) / sqrt(max(1, n_trials));
 
+mean_fixed_rms_cutoff = mean(all_fixed_rms_cutoff, 1);
+sem_fixed_rms_cutoff = std(all_fixed_rms_cutoff, [], 1) / sqrt(max(1, n_trials));
+
 
 %%
 
-colors = lines(2);
+colors = lines(3);
 figure;
 subplot(1, 3, 1); hold on;
 x = (0:numel(mean_err)-1)/100;
 shadePlot(x, mean_err, sem_err, colors(1, :));
 x = (0:numel(mean_fixed_rms)-1)/100;
 shadePlot(x, mean_fixed_rms, sem_fixed_rms, colors(2, :));
+x = (0:numel(mean_fixed_rms_cutoff)-1)/100;
+shadePlot(x, mean_fixed_rms_cutoff, sem_fixed_rms_cutoff, colors(3, :));
 ylim([0 1000])
 xlabel('Time (s)');
 ylabel('Error distance (um)');
@@ -187,7 +215,7 @@ hold off;
 
 %% ========== FUNCTIONS ==========
 
-function [all_paths_r, all_paths_pred_r, seqLen, is_simple_contrast] = loadDataset(mat_folder, exp_name, bg_type, noise_level)
+function [all_paths_r, all_paths_pred_r, seqLen, is_simple_contrast, all_id_numbers, all_scaling_factors] = loadDataset(mat_folder, exp_name, bg_type, noise_level)
     % Load and process a single dataset
     % Inputs:
     %   mat_folder: path to the folder containing .mat files
@@ -209,10 +237,11 @@ function [all_paths_r, all_paths_pred_r, seqLen, is_simple_contrast] = loadDatas
     
     fprintf('Loading: %s\n', filename);
     data = load(filepath);
-    
     [all_paths_r, seqLen] = reshapeAllPaths(data.all_paths);
     all_paths_pred_r = squeeze(data.all_paths_pred);
     is_simple_contrast = cellfun(@(x) contains(x, 'gray_image'), data.all_bg_file);
+    all_id_numbers = data.all_id_numbers;
+    all_scaling_factors = data.all_scaling_factors;
     
     assert(isequal(size(all_paths_r), size(all_paths_pred_r)), ...
            'Reshaped paths and predicted paths must have the same dimensions');
@@ -481,45 +510,7 @@ function corr_coeff = calculateFixedShiftCorrelation(true_path, pred_path, shift
     end
 end
 
-function [rms_error, error_len] = calculateFixedShiftRMSError(true_path, pred_path, shift_val, real_dim)
-    % Calculate RMS error with a fixed shift
-    % Inputs:
-    %   true_path: true path coordinates [time_steps, 2] (x, y coordinates)
-    %   pred_path: predicted path coordinates [time_steps, 2] (x, y coordinates)
-    %   shift_val: fixed shift value (positive = pred leads true)
-    %   real_dim: scaling factor [x_scale, y_scale]
-    % Output:
-    %   rms_error: mean RMS error across all valid time steps after shift
-    
-    % Scale paths to real dimensions first
-    true_scaled = true_path .* reshape(real_dim, [1 2]);
-    pred_scaled = pred_path .* reshape(real_dim, [1 2]);
-    
-    % Apply the fixed shift
-    if shift_val > 0
-        % Predicted signal leads - shift pred signal backwards (or true forward)
-        true_shifted = true_scaled((shift_val+1):end, :);
-        pred_shifted = pred_scaled(1:(end-shift_val), :);
-    elseif shift_val < 0
-        % Predicted signal lags - shift pred signal forwards (or true backward)
-        shift_val = abs(shift_val);
-        true_shifted = true_scaled(1:(end-shift_val), :);
-        pred_shifted = pred_scaled((shift_val+1):end, :);
-    else
-        % No shift
-        true_shifted = true_scaled;
-        pred_shifted = pred_scaled;
-    end
-    
-    % Calculate RMS error at each time step after shift
-    if size(true_shifted, 1) > 0 && size(pred_shifted, 1) > 0
-        error_per_timestep = sqrt(sum((true_shifted - pred_shifted).^2, 2));
-        rms_error = error_per_timestep; % Return mean RMS error
-    else
-        rms_error = NaN; % Return NaN if no valid time steps
-    end
-    error_len = length(rms_error);
-end
+
 
 % ...existing code...
 function [velocity_true, velocity_pred, error_len] = calculateVelocity(true_path, pred_path, shift_val, real_dim)

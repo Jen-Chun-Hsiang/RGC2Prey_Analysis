@@ -7,7 +7,7 @@ exp_id = 17;
 
 %% ——— Common settings ———
 Folder_Name = '\\storage1.ris.wustl.edu\kerschensteinerd\Active\Emily\RISserver\RGC2Prey\Results\Mats';
-Tag         = '_cricket_location_prediction_200_prediction_error';
+Tag         = '_cricket_location_prediction_200_prediction_error_with_path';
 n_epoch     = 200;
 
 switch exp_id
@@ -171,22 +171,44 @@ switch exp_id
         Noise_level   = {'0.016','0.032','0.064','0.128','0.256'};
         BG_folder     = repmat({'blend_'},1,length(Dates));
         LSTM_layer_n  = {'OFF-N', 'ON-T', 'OFF-T', 'ON-N', 'ON-T (0.006)', 'ON-T (0.18)', 'ON-T (0.36)'};
-        plot_line_ids = [2 5:7];
+        plot_line_ids = [1:4];
+        fname_pattern = '%s_cricket_%snoise%s%s';
+
+    case 18
+        title_name    = '(Model) obersered predation results';
+        Dates         = {'2025092101',  '2025092102', '2025092103',  '2025092104', '2025091802',  '2025091803'};  
+        Noise_level   = {'0.016','0.032','0.064','0.128','0.256'};
+        BG_folder     = repmat({'blend_'},1,length(Dates));
+        LSTM_layer_n  = {'ON-T (138)', 'ON-T (950)', 'OFF-T (138)', 'OFF-T (596)', 'ON-T (475)', 'OFF-T (298)'};
+        plot_line_ids = [1:6];
         fname_pattern = '%s_cricket_%snoise%s%s';
     
     otherwise
         error('exp_id must be 1, 2 or 3');
 end
+%%
+load_mat_folder = '\\storage1.ris.wustl.edu\kerschensteinerd\Active\Emily\RISserver\RGC2Prey\';  % folder to save output MAT file
+coverage_mat_file = fullfile(load_mat_folder, 'processed_cover_radius.mat'); % for 'body' 
+cover_radius = load(coverage_mat_file, 'file_index_list', 'processed_cover_radius');
+cover_radius = [cover_radius.file_index_list(:) cover_radius.processed_cover_radius(:)];
 
 %% ——— Shared data‐loading and plotting code ———
 [unique_string, ~, string_ids] = unique(LSTM_layer_n);
 N_days   = numel(Dates);
 N_levels = numel(Noise_level);
+fixed_shift = -9;
+sf_scale = 0.54;
+pix_to_um = 4.375; % each pixel is 4.375 um
+real_dim = [240 180]*pix_to_um/sf_scale;
+is_correct_object_zone = 1;
+bg_type = 'grass'; % or 'grass', 'simple'
 
 Data_m = nan(N_days, N_levels);
 Data_s = nan(N_days, N_levels);
 Data_t = nan(N_days, n_epoch);
 Data_n = nan(N_days, N_levels);
+DataP_m = nan(N_days, N_levels);
+DataP_s = nan(N_days, N_levels);
 
 for i = 1:N_days
     for j = 1:N_levels
@@ -197,11 +219,47 @@ for i = 1:N_days
             bg = '';
         end
         fname = sprintf(fname_pattern, Dates{i}, bg, Noise_level{j}, Tag);
-        load(fullfile(Folder_Name, fname), 'test_losses', 'training_losses');
+        load(fullfile(Folder_Name, fname), 'test_losses', 'training_losses',...
+         'all_paths', 'all_paths_pred', 'all_id_numbers', 'all_scaling_factors', 'all_bg_file');
         n_sample      = numel(test_losses);
         Data_n(i, j)  = n_sample;
         Data_m(i, j)  = mean(test_losses);
         Data_s(i, j)  = std(test_losses)/sqrt(n_sample);
+
+        all_paths_r= reshapeAllPaths(all_paths);
+        all_paths_pred_r = squeeze(all_paths_pred);
+        is_simple_contrast = cellfun(@(x) contains(x, 'gray_image'), all_bg_file);
+        assert(n_sample == size(all_paths_r, 1), 'Mismatch in number of test samples and loaded paths');
+        for ii = 1:n_sample
+            
+            true_path_trial = squeeze(all_paths_r(ii, :, :));
+            pred_path_trial = squeeze(all_paths_pred_r(ii, :, :));
+            % true_path_scaled = true_path_trial .* reshape(real_dim, [1 2]);
+            % pred_path_scaled = pred_path_trial .* reshape(real_dim, [1 2]);
+            cut_off = acceptance_zone_radius(double(all_id_numbers(ii)), all_scaling_factors(ii, 50:end), cover_radius, fixed_shift);
+            [fixed_rms, rms_len] = calculateFixedShiftRMSError(true_path_trial, pred_path_trial, fixed_shift, real_dim);
+            if ii == 1
+                all_fixed_rms = zeros(n_sample, rms_len);
+            end
+            if is_correct_object_zone
+                all_fixed_rms(ii, :) = max(0, double(fixed_rms)'  - cut_off);
+            end
+        end
+        switch bg_type
+            case 'blend'
+                DataP_m(i, j)  = mean(all_fixed_rms, 'all');
+                DataP_s(i, j)  = std(mean(all_fixed_rms, 1))/sqrt(n_sample);
+            case 'grass'
+                DataP_m(i, j)  = mean(all_fixed_rms(~is_simple_contrast, :), 'all');
+                DataP_s(i, j)  = std(mean(all_fixed_rms(~is_simple_contrast, :), 1))/sqrt(sum(~is_simple_contrast));
+            case 'simple'
+                DataP_m(i, j)  = mean(all_fixed_rms(is_simple_contrast, :), 'all');
+                DataP_s(i, j)  = std(mean(all_fixed_rms(is_simple_contrast, :), 1))/sqrt(sum(is_simple_contrast));
+            otherwise
+                error('bg_type must be blend or grass or simple');
+        end
+
+
     end
     Data_t(i, :) = training_losses(1:n_epoch);
 end
@@ -212,7 +270,21 @@ colors = lines(numel(unique_string));
 hFig = figure;
 
 % ——— Right: Test‐loss vs Noise ———
-subplot(1, 2, 2); hold on
+subplot(1, 3, 3); hold on
+for k = 1:numel(plot_line_ids)
+    i = plot_line_ids(k);
+    e = errorbar(x, DataP_m(i, :), DataP_s(i, :), 'CapSize', 0, 'LineWidth',1.5);
+    e.Color   = colors(string_ids(i), :);
+    legs{k}   = unique_string{string_ids(i)};
+end
+legend(legs, 'Location', 'best');
+xlabel('Noise levels')
+xticks(x); xticklabels(Noise_level);
+ylabel('Test losses');
+% ylim([0.0 0.3])
+% yticks(0.1:0.1:0.3);
+
+subplot(1, 3, 2); hold on
 for k = 1:numel(plot_line_ids)
     i = plot_line_ids(k);
     e = errorbar(x, Data_m(i, :), Data_s(i, :), 'CapSize', 0, 'LineWidth',1.5);
@@ -227,7 +299,7 @@ ylim([0.0 0.3])
 yticks(0.1:0.1:0.3);
 
 % ——— Left: Training‐loss vs Epoch ———
-subplot(1, 2, 1); hold on
+subplot(1, 3, 1); hold on
 clear legs
 for k = 1:numel(plot_line_ids)
     i = plot_line_ids(k);
