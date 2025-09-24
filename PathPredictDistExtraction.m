@@ -26,9 +26,9 @@
 mat_folder = '\\storage1.ris.wustl.edu\kerschensteinerd\Active\Emily\RISserver\RGC2Prey\Results\Mats\';
 bg_type = 'blend'; % or 'grass'
 
-exp_name = '2025091502';
+exp_name = '2025092108';
 noise_level = '0.016';
-is_correct_object_zone = 0;
+is_correct_object_zone = 1;
 [all_paths_r, all_paths_pred_r, seqLen, is_simple_contrast, all_id_numbers, all_scaling_factors, all_path_cm] = loadDataset(mat_folder, exp_name, bg_type, noise_level);
 
 load_mat_folder = '\\storage1.ris.wustl.edu\kerschensteinerd\Active\Emily\RISserver\RGC2Prey\';  % folder to save output MAT file
@@ -37,13 +37,15 @@ cover_radius = load(coverage_mat_file, 'file_index_list', 'processed_cover_radiu
 cover_radius = [cover_radius.file_index_list(:) cover_radius.processed_cover_radius(:)];
 
 %% Single trial visualization (original functionality)
-trial_id = 1; % Change this to visualize different trials
+trial_id = 45; % Change this to visualize different trials
 %real_dim = [240 180]*4.375/0.54;
 real_dim = [120 90]*4.375/0.54;
+cm_dim_scale = 4.375/0.54; % Convert cm to um
 figure; 
 subplot(1, 2, 1)
 plot(all_paths_r(trial_id, :, 1)*real_dim(1), all_paths_r(trial_id, :, 2)*real_dim(2), '-b.'); hold on;
 plot(all_paths_pred_r(trial_id, :, 1)*real_dim(1), all_paths_pred_r(trial_id, :, 2)*real_dim(2), '-r.');
+plot(all_path_cm(trial_id, :, 1)*cm_dim_scale, all_path_cm(trial_id, :, 2)*cm_dim_scale, '-g.');
 xlabel('X Position'); ylabel('Y Position'); title('Cricket Location Prediction');
 legend('True Path', 'Predicted Path');
 
@@ -123,7 +125,7 @@ for i = 1:size(all_paths_r, 1)
     all_fixed_rms_cutoff(i, :) = max(0, fixed_rms' - cut_off);
 
 
-    [fixed_cm_rms, ~] = calculateFixedShiftRMSError(true_path_scaled, pred_cm_path_trial* 4.375 / 0.54, fixed_shift, ones(1, 2));
+    [fixed_cm_rms, ~] = calculateFixedShiftRMSError(true_path_scaled, pred_cm_path_trial* cm_dim_scale, fixed_shift, ones(1, 2));
     all_fixed_cm_rms(i, :) = fixed_cm_rms;
     if is_correct_object_zone
         all_fixed_cm_rms(i, :) = max(0, all_fixed_cm_rms(i, :)  - cut_off);
