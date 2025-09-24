@@ -24,6 +24,7 @@
 %
 %% Configuration - Shared Variables
 mat_folder = '\\storage1.ris.wustl.edu\kerschensteinerd\Active\Emily\RISserver\RGC2Prey\Results\Mats\';
+fig_save_folder = '\\storage1.ris.wustl.edu\kerschensteinerd\Active\Emily\RISserver\RGC2Prey\Summary\Illustrator\'; 
 bg_type = 'blend'; % or 'grass'
 
 exp_name = '2025092108';
@@ -65,21 +66,72 @@ fixed_corr = calculateFixedShiftCorrelation(true_path_trial, pred_path_trial, fi
 fixed_rms = calculateFixedShiftRMSError(squeeze(all_paths_r(trial_id, :, :)), squeeze(all_paths_pred_r(trial_id, :, :)), fixed_shift, real_dim);
 
 shift_val = 0;
-[velocity_true, velocity_pred] = calculateVelocity(squeeze(all_paths_r(trial_id, :, :)), squeeze(all_paths_pred_r(trial_id, :, :)), shift_val, real_dim);
+[velocity_true, velocity_pred] = calculateVelocity(squeeze(all_paths_r(trial_id, :, :)), squeeze(all_paths_pred_r(trial_id, :, :)), fixed_shift, real_dim);
 plot(1:seqLen, error_distance, 'm-');
 plot(1:numel(fixed_rms), fixed_rms, 'k-');
 plot(1:numel(velocity_true), velocity_true, 'b-');
 xlabel('Time steps'); ylabel('Error distance (um)'); 
 title(sprintf('Single Trial Error\nXCorr: %.3f, Shift: %d, FixedCorr(%.0f): %.3f\nFixedRMS(%.0f): %.1f', max_xcorr, shift_value, fixed_shift, fixed_corr, fixed_shift, fixed_rms));
+%%
+is_visual_degree = 1;
+vis_deg_to_cm = 32.5;
+if is_visual_degree
+    vis_scale = 1/vis_deg_to_cm; % Convert cm to visual degrees
+else
+    vis_scale = 1; % No scaling
+end
 
+baseColors = [ 120, 120, 120;   % red-ish
+               255, 0, 255;   % green-ish
+               0, 255, 255]/255; % blue-ish
+true_path_trial = squeeze(all_paths_r(trial_id, :, :));
+pred_path_trial = squeeze(all_paths_pred_r(trial_id, :, :));
+pred_cm_path_trial = squeeze(all_path_cm(trial_id, :, :));
+[fixed_rms, rms_len] = calculateFixedShiftRMSError(true_path_trial, pred_path_trial, fixed_shift, real_dim);
+[fixed_cm_rms, ~] = calculateFixedShiftRMSError(true_path_trial, pred_cm_path_trial* cm_dim_scale, fixed_shift, ones(1, 2));
+[velocity_true, velocity_pred] = calculateVelocity(true_path_trial, pred_path_trial, fixed_shift, real_dim);
+figure;
+subplot(2, 1, 1)
+t = (0:rms_len-1)/100; % Time vector in seconds
+
+plot(t, fixed_cm_rms * vis_scale, '-', 'Color', baseColors(3,:), 'LineWidth', 1);
+hold on;
+plot(t, fixed_rms * vis_scale, '-', 'Color', baseColors(2,:), 'LineWidth', 1);
+ylabel('Dist to cricket (deg)'); 
+ylim([0 15])
+yticks(0:6:12);
+yticklabels(arrayfun(@(v) sprintf('%d', v), 0:6:12, 'UniformOutput', false));
+xlabel('Time (s)'); 
+xlim([0 t(end)]);
+xticks(0:0.8:t(end));
+xticklabels(arrayfun(@(v) sprintf('%.1f', v), 0:0.8:t(end), 'UniformOutput', false));
+box off
+legend({'Fixed CM RMS', 'Fixed RMS'});
+
+subplot(2, 1, 2)
+plot(t(1:end-1), velocity_true * 100 * vis_scale, '-', 'Color', baseColors(1,:), 'LineWidth', 1);
+xlabel('Time (s)'); 
+xlim([0 t(end)]);
+xticks(0:0.8:t(end));
+xticklabels(arrayfun(@(v) sprintf('%.1f', v), 0:0.8:t(end), 'UniformOutput', false));
+ylabel('Velocity (deg/s)'); 
+ylim([0 150])
+yticks(0:60:120);
+yticklabels(arrayfun(@(v) sprintf('%d', v), 0:60:120, 'UniformOutput', false));
+box off
+legend({'Velocity True'});
+
+%%
+% keyboard;
+% save_file_name = fullfile(fig_save_folder, sprintf('PredictionErrorTrace_%s_%s_%d', exp_name, noise_level, trial_id));
+% print(gcf, [save_file_name '.eps'], '-depsc', '-painters'); % EPS format
+% print(gcf, [save_file_name '.png'], '-dpng', '-r300'); % PNG, 600 dpi
 %% Mean error across all trials (original functionality)
 % Calculate all error metrics separately for each trial
 all_err_dist = zeros(size(all_paths_r, 1), seqLen);
 all_xcorr = zeros(size(all_paths_r, 1), 1);
 all_shifts = zeros(size(all_paths_r, 1), 1);
 all_fixed_corr = zeros(size(all_paths_r, 1), 1);
-
-
 
 % Fixed shift value for correlation coefficient calculation
 fixed_shift = -9;

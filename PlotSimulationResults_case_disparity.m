@@ -84,7 +84,4 @@ ylim([0 0.5])
 yticks(0.0:0.1:0.5);
 
 sgtitle(sprintf('%s in cricket prediction', title_name))
-%%
-print(hFig, "myHighResPlot.png", "-dpng", "-r300");
-%%
-print("myHighResPlot.png", "-dpng", "-r300");
+

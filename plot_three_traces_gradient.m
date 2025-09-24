@@ -93,3 +93,8 @@ hold off;
 box off
 axis off
 drawnow;
+
+%%
+% save_file_name = fullfile(fig_save_folder, sprintf('PredictionTrace_%s_%s_%d', exp_name, noise_level, trial_id));
+% print(gcf, [save_file_name '.eps'], '-depsc', '-painters'); % EPS format
+% print(gcf, [save_file_name '.png'], '-dpng', '-r300'); % PNG, 600 dpi
