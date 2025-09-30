@@ -1,6 +1,6 @@
 clear; clc;
 %% ——— User picks which experiment to plot ———
-exp_id = 18;  
+exp_id = 23;  
 % 1: Noise contribution to ON/OFF grid
 % 2: Temporal filter biphasic
 % 3: Surround inhibition
@@ -166,31 +166,69 @@ switch exp_id
     
     case 17
         title_name    = '(Model) obersered predation results';
-        Dates         = {'2025091801',  '2025091802', '2025091803',  '2025091804', '2025091805',  '2025091806', '2025091807'};  %, 
+        Dates         = {'2025091801',  '2025091802', '2025091803',  '2025091804',  'c2_2025091804', '2025091805',  '2025091806', '2025091807'};  %, 
         % Noise_level   = {'0.0','0.002','0.004','0.008','0.016','0.032'};
         Noise_level   = {'0.016','0.032','0.064','0.128','0.256'};
         BG_folder     = repmat({'blend_'},1,length(Dates));
-        LSTM_layer_n  = {'OFF-N', 'ON-T', 'OFF-T', 'ON-N', 'ON-T (0.006)', 'ON-T (0.18)', 'ON-T (0.36)'};
+        LSTM_layer_n  = {'OFF-N', 'ON-T', 'OFF-T', 'ON-N', 'ON-N (c2)', 'ON-T (0.006)', 'ON-T (0.18)', 'ON-T (0.36)'};
         plot_line_ids = [1:4];
         fname_pattern = '%s_cricket_%snoise%s%s';
 
     case 18
-        title_name    = '(Model) constant coverage';
+        title_name    = '(Model) constant coverage - varied density';
         Dates         = {'2025092101',  '2025092102', '2025092103',  '2025092104','2025092105',  '2025092106',  '2025091802',  '2025091803'};  
         Noise_level   = {'0.016','0.032','0.064','0.128','0.256'};
         BG_folder     = repmat({'blend_'},1,length(Dates));
         LSTM_layer_n  = {'ON-T (138)', 'ON-T (950)', 'OFF-T (138)', 'OFF-T (596)', 'ON-T (238)', 'OFF-T (149)', 'ON-T (475)', 'OFF-T (298)'};
-        plot_line_ids = [4 8 6];
+        plot_line_ids = [6 8 4]; % ON [1 5 7 2] OFF [3 6 8 4]
         fname_pattern = '%s_cricket_%snoise%s%s';
 
     case 19
-        title_name    = '(Model) constant density';
-        Dates         = {'2025091802',  '2025091803', '2025092107',  '2025092108'};  
-        Noise_level   = {'0.016','0.032','0.064','0.128','0.256'};
+        title_name    = '(Model) constant density - varied coverage';
+        Dates         = {'2025091802',  '2025091803',   '2025092107',  '2025092108',   '2025091812',   '2025092109',  '2025092110'};  
+        Noise_level   = {'0.0', '0.016','0.032','0.064','0.128','0.256'};
+        LSTM_layer_n  = {'ON-T (0.54)', 'OFF-T (0.54)', 'ON-T (0.76)', 'OFF-T (0.76)', 'ON-T 2 (0.54)', 'ON-T (0.382)', 'OFF-T (0.382)'};
+        plot_line_ids = [7 2 4 ];  % ON [6 1 3] OFF [7 2 4]
         BG_folder     = repmat({'blend_'},1,length(Dates));
-        LSTM_layer_n  = {'ON-T (0.54)', 'OFF-T (0.54)', 'ON-T (0.76)', 'OFF-T (0.76)'};
-        plot_line_ids = [1:4];
         fname_pattern = '%s_cricket_%snoise%s%s';
+    
+    case 20
+        title_name    = '(Model) constant density - varied coverage';
+        Dates         = {'2025092301'};  
+        Noise_level   = {'0.0', '0.016','0.032','0.064','0.128','0.256'};
+        LSTM_layer_n  = {'ON-OFF binocular (0.54)'};
+        plot_line_ids = [1];  % ON [6 1 3] OFF [7 2 4]
+        BG_folder     = repmat({'blend_'},1,length(Dates));
+        fname_pattern = '%s_cricket_%snoise%s%s';
+    
+    case 21
+        title_name    = '(Model) obersered predation results';
+        Dates         = {'2025091802', '2025091803', '2025091805',  '2025091806', '2025091807'};  %, 
+        % Noise_level   = {'0.0','0.002','0.004','0.008','0.016','0.032'};
+        Noise_level   = {'0.0','0.016','0.032','0.064','0.128','0.256'};
+        BG_folder     = repmat({'blend_'},1,length(Dates));
+        LSTM_layer_n  = {'ON-T', 'OFF-T', 'ON-T (0.006)', 'ON-T (0.18)', 'ON-T (0.36)'};
+        plot_line_ids = [1 3:5];
+        fname_pattern = '%s_cricket_%snoise%s%s';
+
+    case 22
+        title_name    = '(Model) obersered predation results - Both ON and OFF';
+        Dates         = {'2025092701', '2025092702'}; 
+        Noise_level   = {'0.0','0.016','0.032','0.064','0.128','0.256'};
+        BG_folder     = repmat({'blend_'},1,length(Dates));
+        LSTM_layer_n  = {'Temporal', 'Nasal'};
+        plot_line_ids = [1 2];
+        fname_pattern = '%s_cricket_%snoise%s%s';
+
+     case 23
+        title_name    = '(Model) biphasic temporal filter - Both ON and OFF';
+        Dates         = {'2025092801',  '2025092802',   '2025092803',  '2025092804',   '2025092805',   '2025092806'};  
+        Noise_level   = {'0.0', '0.016','0.032','0.064','0.128','0.256'};
+        LSTM_layer_n  = {'ON-T (2.0)', 'ON-T (0.5)', 'ON-T (1.0)', 'OFF-T (2.0)', 'OFF-T (0.5)', 'OFF-T (1.0)'};
+        plot_line_ids = [1 2 3];  % ON [6 1 3] OFF [7 2 4]
+        BG_folder     = repmat({'blend_'},1,length(Dates));
+        fname_pattern = '%s_cricket_%snoise%s%s';
+
     
     otherwise
         error('exp_id must be 1, 2 or 3');
@@ -207,19 +245,32 @@ N_days   = numel(Dates);
 N_levels = numel(Noise_level);
 fixed_shift = -9;
 sf_scale = 0.54;
+is_degree = true;
 pix_to_um = 4.375; % each pixel is 4.375 um
 real_dim = [120 90]*pix_to_um/sf_scale;
 is_correct_object_zone = 1;
 bg_type = 'grass'; % or 'grass', 'simple'
+num_sample = 100;
 
 Data_m = nan(N_days, N_levels);
 Data_s = nan(N_days, N_levels);
+Data_v = nan(N_days, N_levels, num_sample);
 Data_t = nan(N_days, n_epoch);
 Data_n = nan(N_days, N_levels);
 DataP_m = nan(N_days, N_levels);
 DataP_s = nan(N_days, N_levels);
+DataP_v = nan(N_days, N_levels, num_sample);
 DataCM_m = nan(N_days, N_levels);
 DataCM_s = nan(N_days, N_levels);
+DataCM_v = nan(N_days, N_levels, num_sample);
+D_validation = nan(N_days, N_levels, num_sample);
+
+if is_degree
+    unit_factor = 1/32.5; % to convert to cm
+else
+    unit_factor = 1; % to convert to cm
+end
+
 
 for i = 1:N_days
     for j = 1:N_levels
@@ -233,11 +284,19 @@ for i = 1:N_days
         load(fullfile(Folder_Name, fname), 'test_losses', 'training_losses',...
          'all_paths', 'all_paths_pred', 'all_id_numbers', 'all_scaling_factors', 'all_bg_file', 'all_path_cm');
         n_sample      = numel(test_losses);
+        assert(n_sample == num_sample, 'Mismatch in number of test samples');
         Data_n(i, j)  = n_sample;
         Data_m(i, j)  = mean(test_losses);
         Data_s(i, j)  = std(test_losses)/sqrt(n_sample);
 
         all_paths_r= reshapeAllPaths(all_paths);
+        D_validation(i, j, 1:n_sample) = all_paths_r(:, end-1, 1); % final distance to target
+        try
+            all_path_cm = reshapeAllPaths(all_path_cm);
+        catch
+            disp('Center of mass path not calculated, using regular path instead');
+            all_path_cm = all_paths_r; % if center of mass not calculated, use regular path
+        end
         all_path_cm = reshapeAllPaths(all_path_cm);
         all_paths_pred_r = squeeze(all_paths_pred);
         is_simple_contrast = cellfun(@(x) contains(x, 'gray_image'), all_bg_file);
@@ -246,41 +305,50 @@ for i = 1:N_days
             
             true_path_trial = squeeze(all_paths_r(ii, :, :));
             pred_path_trial = squeeze(all_paths_pred_r(ii, :, :));
-            pred_cm_path_trial = squeeze(all_path_cm(i, :, :));
+            pred_cm_path_trial = squeeze(all_path_cm(ii, :, :));
             true_path_scaled = true_path_trial .* reshape(real_dim, [1 2]);
             % pred_path_scaled = pred_path_trial .* reshape(real_dim, [1 2]);
             cut_off = acceptance_zone_radius(double(all_id_numbers(ii)), all_scaling_factors(ii, 50:end), cover_radius, fixed_shift);
+            cut_off_cm = acceptance_zone_radius(double(all_id_numbers(ii)), all_scaling_factors(ii, 50:end), cover_radius, fixed_shift);
             [fixed_rms, rms_len] = calculateFixedShiftRMSError(true_path_trial, pred_path_trial, fixed_shift, real_dim);
-            [fixed_cm_rms, ~] = calculateFixedShiftRMSError(true_path_scaled, pred_cm_path_trial* 4.375 / 0.54, fixed_shift, ones(1, 2));
+            [fixed_cm_rms, rms_len_cm] = calculateFixedShiftRMSError(true_path_scaled, pred_cm_path_trial* pix_to_um / sf_scale, fixed_shift, ones(1, 2));
     
             if ii == 1
                 all_fixed_rms = zeros(n_sample, rms_len);
-                all_fixed_cm_rms = zeros(n_sample, rms_len);
+                all_fixed_cm_rms = zeros(n_sample, rms_len_cm);
             end
             if is_correct_object_zone
-                all_fixed_rms(ii, :) = max(0, double(fixed_rms)'  - cut_off);
-                all_fixed_cm_rms(ii, :) = max(0, double(fixed_cm_rms)'  - cut_off);
+                all_fixed_rms(ii, :) = max(0, double(fixed_rms(:))  - cut_off(:));
+                all_fixed_cm_rms(ii, :) = max(0, double(fixed_cm_rms(:))  - cut_off_cm(:));
             else
                 all_fixed_rms(ii, :) = double(fixed_rms)';
                 all_fixed_cm_rms(ii, :) = double(fixed_cm_rms)';
             end
         end
+        all_fixed_rms = all_fixed_rms * unit_factor;
+        all_fixed_cm_rms = all_fixed_cm_rms * unit_factor;
         switch bg_type
             case 'blend'
                 DataP_m(i, j)  = mean(all_fixed_rms, 'all');
                 DataP_s(i, j)  = std(mean(all_fixed_rms, 1))/sqrt(n_sample);
+                DataP_v(i, j, 1:size(all_fixed_rms,1)) = mean(all_fixed_rms, 2);    
                 DataCM_m(i, j)  = mean(all_fixed_cm_rms, 'all');
                 DataCM_s(i, j)  = std(mean(all_fixed_cm_rms, 1))/sqrt(n_sample);
+                DataCM_v(i, j, 1:size(all_fixed_cm_rms,1)) = mean(all_fixed_cm_rms, 2);
             case 'grass'
                 DataP_m(i, j)  = mean(all_fixed_rms(~is_simple_contrast, :), 'all');
                 DataP_s(i, j)  = std(mean(all_fixed_rms(~is_simple_contrast, :), 1))/sqrt(sum(~is_simple_contrast));
+                DataP_v(i, j, 1:sum(~is_simple_contrast)) = mean(all_fixed_rms(~is_simple_contrast, :), 2);
                 DataCM_m(i, j)  = mean(all_fixed_cm_rms(~is_simple_contrast, :), 'all');
                 DataCM_s(i, j)  = std(mean(all_fixed_cm_rms(~is_simple_contrast, :), 1))/sqrt(sum(~is_simple_contrast));
+                DataCM_v(i, j, 1:sum(~is_simple_contrast)) = mean(all_fixed_cm_rms(~is_simple_contrast, :), 2);
             case 'simple'
                 DataP_m(i, j)  = mean(all_fixed_rms(is_simple_contrast, :), 'all');
                 DataP_s(i, j)  = std(mean(all_fixed_rms(is_simple_contrast, :), 1))/sqrt(sum(is_simple_contrast));
+                DataP_v(i, j, 1:sum(is_simple_contrast)) = mean(all_fixed_rms(is_simple_contrast, :), 2);
                 DataCM_m(i, j)  = mean(all_fixed_cm_rms(is_simple_contrast, :), 'all');
                 DataCM_s(i, j)  = std(mean(all_fixed_cm_rms(is_simple_contrast, :), 1))/sqrt(sum(is_simple_contrast));
+                DataCM_v(i, j, 1:sum(is_simple_contrast)) = mean(all_fixed_cm_rms(is_simple_contrast, :), 2);
         otherwise
                 error('bg_type must be blend or grass or simple');
         end
@@ -289,9 +357,18 @@ for i = 1:N_days
     end
     Data_t(i, :) = training_losses(1:n_epoch);
 end
-
+DataCM_v = DataCM_v(:, :, ~isnan(DataCM_v(1, 1, :)));
+DataP_v  = DataP_v(:, :, ~isnan(DataP_v(1, 1, :)));
 x      = 1:N_levels;
 colors = lines(numel(unique_string));
+%%
+eids = [2 4];
+level_id = 2;
+sum((D_validation(eids(1), level_id, :)-D_validation(eids(2), level_id, :)).^2, 'all')
+figure; hold on
+plot(squeeze(D_validation(eids(1), level_id, :)), 'k');
+plot(squeeze(D_validation(eids(2), level_id, :)), 'r');
+%%
 
 hFig = figure;
 
@@ -311,7 +388,11 @@ end
 legend(legs, 'Location', 'best');
 xlabel('Noise levels')
 xticks(x); xticklabels(Noise_level);
-ylabel('Test losses');
+if is_degree
+    ylabel('Error dist. (degrees)');
+else
+    ylabel('Error dist. (cm)');
+end
 % ylim([0.0 0.3])
 % yticks(0.1:0.1:0.3);
 

@@ -27,10 +27,10 @@ mat_folder = '\\storage1.ris.wustl.edu\kerschensteinerd\Active\Emily\RISserver\R
 fig_save_folder = '\\storage1.ris.wustl.edu\kerschensteinerd\Active\Emily\RISserver\RGC2Prey\Summary\Illustrator\'; 
 bg_type = 'blend'; % or 'grass'
 
-exp_name = '2025092108';
-noise_level = '0.016';
+exp_name = '2025091802';
+noise_level = '0.0';
 is_correct_object_zone = 1;
-[all_paths_r, all_paths_pred_r, seqLen, is_simple_contrast, all_id_numbers, all_scaling_factors, all_path_cm] = loadDataset(mat_folder, exp_name, bg_type, noise_level);
+[all_paths_r, all_paths_pred_r, seqLen, is_simple_contrast, all_id_numbers, all_scaling_factors, all_path_cm, all_paths_bg] = loadDataset(mat_folder, exp_name, bg_type, noise_level);
 
 load_mat_folder = '\\storage1.ris.wustl.edu\kerschensteinerd\Active\Emily\RISserver\RGC2Prey\';  % folder to save output MAT file
 coverage_mat_file = fullfile(load_mat_folder, 'processed_cover_radius.mat');
@@ -38,7 +38,7 @@ cover_radius = load(coverage_mat_file, 'file_index_list', 'processed_cover_radiu
 cover_radius = [cover_radius.file_index_list(:) cover_radius.processed_cover_radius(:)];
 
 %% Single trial visualization (original functionality)
-trial_id = 45; % Change this to visualize different trials
+trial_id = 96; % Change this to visualize different trials
 %real_dim = [240 180]*4.375/0.54;
 real_dim = [120 90]*4.375/0.54;
 cm_dim_scale = 4.375/0.54; % Convert cm to um
@@ -64,12 +64,15 @@ fixed_corr = calculateFixedShiftCorrelation(true_path_trial, pred_path_trial, fi
 
 % Calculate fixed-shift RMS error for this trial
 fixed_rms = calculateFixedShiftRMSError(squeeze(all_paths_r(trial_id, :, :)), squeeze(all_paths_pred_r(trial_id, :, :)), fixed_shift, real_dim);
+[fixed_cm_rms, ~] = calculateFixedShiftRMSError(true_path_trial, squeeze(all_path_cm(trial_id, :, :))* cm_dim_scale, fixed_shift, ones(1, 2));
 
 shift_val = 0;
-[velocity_true, velocity_pred] = calculateVelocity(squeeze(all_paths_r(trial_id, :, :)), squeeze(all_paths_pred_r(trial_id, :, :)), fixed_shift, real_dim);
+[velocity_true, velocity_bg] = calculateVelocity(squeeze(all_paths_r(trial_id, :, :)), squeeze(all_paths_bg(trial_id, :, :)), fixed_shift, real_dim);
 plot(1:seqLen, error_distance, 'm-');
-plot(1:numel(fixed_rms), fixed_rms, 'k-');
+plot(1:numel(fixed_rms), fixed_rms, 'r-');
+plot(1:numel(fixed_cm_rms), fixed_cm_rms, 'g-');
 plot(1:numel(velocity_true), velocity_true, 'b-');
+plot(1:numel(velocity_bg), velocity_bg, 'y-');
 xlabel('Time steps'); ylabel('Error distance (um)'); 
 title(sprintf('Single Trial Error\nXCorr: %.3f, Shift: %d, FixedCorr(%.0f): %.3f\nFixedRMS(%.0f): %.1f', max_xcorr, shift_value, fixed_shift, fixed_corr, fixed_shift, fixed_rms));
 %%
@@ -88,7 +91,7 @@ true_path_trial = squeeze(all_paths_r(trial_id, :, :));
 pred_path_trial = squeeze(all_paths_pred_r(trial_id, :, :));
 pred_cm_path_trial = squeeze(all_path_cm(trial_id, :, :));
 [fixed_rms, rms_len] = calculateFixedShiftRMSError(true_path_trial, pred_path_trial, fixed_shift, real_dim);
-[fixed_cm_rms, ~] = calculateFixedShiftRMSError(true_path_trial, pred_cm_path_trial* cm_dim_scale, fixed_shift, ones(1, 2));
+[fixed_cm_rms, ~] = calculateFixedShiftRMSError(true_path_trial .* reshape(real_dim, [1 2]), pred_cm_path_trial* cm_dim_scale, fixed_shift, ones(1, 2));
 [velocity_true, velocity_pred] = calculateVelocity(true_path_trial, pred_path_trial, fixed_shift, real_dim);
 figure;
 subplot(2, 1, 1)
@@ -254,6 +257,10 @@ ylim([0 1000])
 xlabel('Time (s)');
 ylabel('Error distance (um)');
 title('Background difference in fixed-shift RMS error with SEM shaded');
+
+%%
+a =  [(1:size(all_fixed_rms, 1))' is_simple_contrast mean(all_fixed_rms, 2)];
+b = sortrows(a, [2 3])
 %%
 return
 
@@ -281,7 +288,7 @@ hold off;
 
 %% ========== FUNCTIONS ==========
 
-function [all_paths_r, all_paths_pred_r, seqLen, is_simple_contrast, all_id_numbers, all_scaling_factors, all_path_cm] = loadDataset(mat_folder, exp_name, bg_type, noise_level)
+function [all_paths_r, all_paths_pred_r, seqLen, is_simple_contrast, all_id_numbers, all_scaling_factors, all_path_cm, all_paths_bg] = loadDataset(mat_folder, exp_name, bg_type, noise_level)
     % Load and process a single dataset
     % Inputs:
     %   mat_folder: path to the folder containing .mat files
@@ -305,6 +312,7 @@ function [all_paths_r, all_paths_pred_r, seqLen, is_simple_contrast, all_id_numb
     data = load(filepath);
     [all_paths_r, seqLen] = reshapeAllPaths(data.all_paths);
     all_path_cm = reshapeAllPaths(double(data.all_path_cm));
+    all_paths_bg = reshapeAllPaths(double(data.all_paths_bg));
     all_paths_pred_r = squeeze(data.all_paths_pred);
     is_simple_contrast = cellfun(@(x) contains(x, 'gray_image'), data.all_bg_file);
     all_id_numbers = data.all_id_numbers;
