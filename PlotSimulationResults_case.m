@@ -1,12 +1,13 @@
 clear; clc;
 %% ——— User picks which experiment to plot ———
-exp_id = 23;  
+exp_id = 18;  
 % 1: Noise contribution to ON/OFF grid
 % 2: Temporal filter biphasic
 % 3: Surround inhibition
 
 %% ——— Common settings ———
 Folder_Name = '\\storage1.ris.wustl.edu\kerschensteinerd\Active\Emily\RISserver\RGC2Prey\Results\Mats';
+fig_save_folder = '\\storage1.ris.wustl.edu\kerschensteinerd\Active\Emily\RISserver\RGC2Prey\Summary\Illustrator\'; 
 Tag         = '_cricket_location_prediction_200_prediction_error_with_path';
 n_epoch     = 200;
 
@@ -171,8 +172,9 @@ switch exp_id
         Noise_level   = {'0.016','0.032','0.064','0.128','0.256'};
         BG_folder     = repmat({'blend_'},1,length(Dates));
         LSTM_layer_n  = {'OFF-N', 'ON-T', 'OFF-T', 'ON-N', 'ON-N (c2)', 'ON-T (0.006)', 'ON-T (0.18)', 'ON-T (0.36)'};
-        plot_line_ids = [1:4];
+        plot_line_ids = [3 1];
         fname_pattern = '%s_cricket_%snoise%s%s';
+        exp_name_tag = 'oberserved-OFF';
 
     case 18
         title_name    = '(Model) constant coverage - varied density';
@@ -180,8 +182,9 @@ switch exp_id
         Noise_level   = {'0.016','0.032','0.064','0.128','0.256'};
         BG_folder     = repmat({'blend_'},1,length(Dates));
         LSTM_layer_n  = {'ON-T (138)', 'ON-T (950)', 'OFF-T (138)', 'OFF-T (596)', 'ON-T (238)', 'OFF-T (149)', 'ON-T (475)', 'OFF-T (298)'};
-        plot_line_ids = [6 8 4]; % ON [1 5 7 2] OFF [3 6 8 4]
+        plot_line_ids = [5 7 2]; % ON [1 5 7 2] OFF [3 6 8 4]
         fname_pattern = '%s_cricket_%snoise%s%s';
+        exp_name_tag = 'varied-density-constant-coverage-ON';
 
     case 19
         title_name    = '(Model) constant density - varied coverage';
@@ -225,7 +228,7 @@ switch exp_id
         Dates         = {'2025092801',  '2025092802',   '2025092803',  '2025092804',   '2025092805',   '2025092806'};  
         Noise_level   = {'0.0', '0.016','0.032','0.064','0.128','0.256'};
         LSTM_layer_n  = {'ON-T (2.0)', 'ON-T (0.5)', 'ON-T (1.0)', 'OFF-T (2.0)', 'OFF-T (0.5)', 'OFF-T (1.0)'};
-        plot_line_ids = [1 2 3];  % ON [6 1 3] OFF [7 2 4]
+        plot_line_ids = [2 3 1];  % ON [2 3 1] OFF [5 6 4]
         BG_folder     = repmat({'blend_'},1,length(Dates));
         fname_pattern = '%s_cricket_%snoise%s%s';
 
@@ -327,6 +330,11 @@ for i = 1:N_days
         end
         all_fixed_rms = all_fixed_rms * unit_factor;
         all_fixed_cm_rms = all_fixed_cm_rms * unit_factor;
+        if i == 3
+            fname
+            sortrows([is_simple_contrast mean(all_fixed_rms, 2)], [1 2])
+            % keyboard;
+        end
         switch bg_type
             case 'blend'
                 DataP_m(i, j)  = mean(all_fixed_rms, 'all');
@@ -387,7 +395,11 @@ end
 
 legend(legs, 'Location', 'best');
 xlabel('Noise levels')
-xticks(x); xticklabels(Noise_level);
+xticks(1:numel(Noise_level)); xticklabels(Noise_level);
+xlim([0.5 numel(Noise_level)+0.5]);
+ylim([4 12]);
+yticks(4:4:12);
+yticklabels(string(num2cell(4:4:12)));
 if is_degree
     ylabel('Error dist. (degrees)');
 else
@@ -430,3 +442,15 @@ sgtitle(sprintf('%s in cricket prediction', title_name))
 print(hFig, "myHighResPlot.png", "-dpng", "-r300");
 %%
 print("myHighResPlot.png", "-dpng", "-r300");
+
+
+%%
+if is_correct_object_zone
+    object_tag = 'correctZone';
+else
+    object_tag = 'noCorrection';
+end
+%%
+save_file_name = fullfile(fig_save_folder, sprintf('SummaryPredResults_%s_%s_%s', exp_name_tag, bg_type, object_tag));
+print(gcf, [save_file_name '.eps'], '-depsc', '-vector'); % EPS format
+print(gcf, [save_file_name '.png'], '-dpng', '-r300'); % PNG, 600 dpi
