@@ -1,6 +1,6 @@
 clear; clc;
 %% ——— User picks which experiment to plot ———
-exp_id = 18;  
+exp_id = 23;  
 % 1: Noise contribution to ON/OFF grid
 % 2: Temporal filter biphasic
 % 3: Surround inhibition
@@ -182,7 +182,7 @@ switch exp_id
         Noise_level   = {'0.016','0.032','0.064','0.128','0.256'};
         BG_folder     = repmat({'blend_'},1,length(Dates));
         LSTM_layer_n  = {'ON-T (138)', 'ON-T (950)', 'OFF-T (138)', 'OFF-T (596)', 'ON-T (238)', 'OFF-T (149)', 'ON-T (475)', 'OFF-T (298)'};
-        plot_line_ids = [5 7 2]; % ON [1 5 7 2] OFF [3 6 8 4]
+        plot_line_ids = [5 7]; % ON [1 5 7 2] OFF [3 6 8 4]
         fname_pattern = '%s_cricket_%snoise%s%s';
         exp_name_tag = 'varied-density-constant-coverage-ON';
 
@@ -191,9 +191,10 @@ switch exp_id
         Dates         = {'2025091802',  '2025091803',   '2025092107',  '2025092108',   '2025091812',   '2025092109',  '2025092110'};  
         Noise_level   = {'0.0', '0.016','0.032','0.064','0.128','0.256'};
         LSTM_layer_n  = {'ON-T (0.54)', 'OFF-T (0.54)', 'ON-T (0.76)', 'OFF-T (0.76)', 'ON-T 2 (0.54)', 'ON-T (0.382)', 'OFF-T (0.382)'};
-        plot_line_ids = [7 2 4 ];  % ON [6 1 3] OFF [7 2 4]
+        plot_line_ids = [7 2 4];  % ON [6 1 3] OFF [7 2 4]
         BG_folder     = repmat({'blend_'},1,length(Dates));
         fname_pattern = '%s_cricket_%snoise%s%s';
+        exp_name_tag = 'varied-coverage-constant-density-OFF';
     
     case 20
         title_name    = '(Model) constant density - varied coverage';
@@ -205,14 +206,14 @@ switch exp_id
         fname_pattern = '%s_cricket_%snoise%s%s';
     
     case 21
-        title_name    = '(Model) obersered predation results';
-        Dates         = {'2025091802', '2025091803', '2025091805',  '2025091806', '2025091807'};  %, 
-        % Noise_level   = {'0.0','0.002','0.004','0.008','0.016','0.032'};
+        title_name    = '(Model) Center-surround';
+        Dates         = {'2025091802', '2025091803', '2025091805',   '2025091806',  '2025091807',  '2025091808',  '2025091809',  '2025091810'};  %, 
         Noise_level   = {'0.0','0.016','0.032','0.064','0.128','0.256'};
         BG_folder     = repmat({'blend_'},1,length(Dates));
-        LSTM_layer_n  = {'ON-T', 'OFF-T', 'ON-T (0.006)', 'ON-T (0.18)', 'ON-T (0.36)'};
-        plot_line_ids = [1 3:5];
+        LSTM_layer_n  = {'ON-T',       'OFF-T',      'ON-T (0.006)', 'ON-T (0.18)', 'ON-T (0.36)', 'OFF-T (0.0)', 'OFF-T (0.124)', 'OFF-T (0.248)'};
+        plot_line_ids = [1 3 5];  % ON [1 3 5]OFF [2 6 8]
         fname_pattern = '%s_cricket_%snoise%s%s';
+        exp_name_tag = 'center-surround-ON';
 
     case 22
         title_name    = '(Model) obersered predation results - Both ON and OFF';
@@ -439,9 +440,9 @@ yticks(0.0:0.1:0.5);
 
 sgtitle(sprintf('%s in cricket prediction', title_name))
 %%
-print(hFig, "myHighResPlot.png", "-dpng", "-r300");
+% print(hFig, "myHighResPlot.png", "-dpng", "-r300");
 %%
-print("myHighResPlot.png", "-dpng", "-r300");
+% print("myHighResPlot.png", "-dpng", "-r300");
 
 
 %%
@@ -450,7 +451,7 @@ if is_correct_object_zone
 else
     object_tag = 'noCorrection';
 end
-%%
+
 save_file_name = fullfile(fig_save_folder, sprintf('SummaryPredResults_%s_%s_%s', exp_name_tag, bg_type, object_tag));
 print(gcf, [save_file_name '.eps'], '-depsc', '-vector'); % EPS format
 print(gcf, [save_file_name '.png'], '-dpng', '-r300'); % PNG, 600 dpi

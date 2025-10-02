@@ -19,10 +19,14 @@ bg_type = 'blend'; % or 'grass'
 noise_level = '0.016'; % Fixed noise level for comparison
 
 % Configure multiple experiments to compare
-exp_name_tag = 'oberserved-ON'
-exp_names = {'2025091802','2025091804'}; % Add/modify experiment names here
-color_ids = [1, 2];
-trial_id = 57; % Trial ID to visualize across experiments
+exp_name_tag = 'surround-inhibition-ON';
+exp_names = {'2025091805', '2025091802', '2025091807'}; % Add/modify experiment names here
+% surround inhibition '2025091805', '2025091802', '2025091807', '2025091808', '2025091803', '2025091810'
+% varied coverage '2025092109','2025091802', '2025092107', '2025092110', '2025091803', '2025092108'
+% varied density '2025092105','2025091802', '2025092102' , '2025092106', '2025091803', '2025092104'
+color_ids = [2, 1, 3]; %2, 1, 3 , 5, 4, 6
+trial_id = 86; % Trial ID to visualize across experiments
+disp_trajectory_id = 2;
 
 % Visual settings
 is_visual_degree = 1;
@@ -68,8 +72,11 @@ end
 baseColors = [
     180, 0, 180;   % ON-Temporal
     120, 0, 120;   % ON-Nasal  
+    240, 0, 240;
     0, 180, 0;   % OFF-Temporal
     0, 120, 0;   % OFF-Nasal
+    0, 240, 0;  
+    120, 120, 120;
 ]/255;
 
 % Extend colors if needed
@@ -97,58 +104,66 @@ true_color = gray_color;        % Ground truth will be gray
 legend_handles = [];
 legend_entries = {};
 
-for i = 1:n_experiments
-    exp = experiments{i};
-    if trial_id <= exp.n_trials
-        % Get trajectory data and convert to visual degrees
-        true_path_x = exp.all_paths_r(trial_id, :, 1) * real_dim(1) * vis_scale;
-        true_path_y = exp.all_paths_r(trial_id, :, 2) * real_dim(2) * vis_scale;
-        pred_path_x = exp.all_paths_pred_r(trial_id, :, 1) * real_dim(1) * vis_scale;
-        pred_path_y = exp.all_paths_pred_r(trial_id, :, 2) * real_dim(2) * vis_scale;
-        
-        N = length(true_path_x);
-        segAlpha = linspace(alpha_start, alpha_end, N-1);
-        
-        % Plot ground truth with gray gradient (only once for all experiments)
-        if i == 1
+% Get ground truth data from first experiment for reference
+ref_exp = experiments{1};
+if trial_id <= ref_exp.n_trials
+    true_path_x = ref_exp.all_paths_r(trial_id, :, 1) * real_dim(1) * vis_scale;
+    true_path_y = ref_exp.all_paths_r(trial_id, :, 2) * real_dim(2) * vis_scale;
+    
+    N = length(true_path_x);
+    segAlpha = linspace(alpha_start, alpha_end, N-1);
+    
+    % Plot ground truth with gray gradient
+    for j = 1:(N-1)
+        alpha = segAlpha(j);
+        color = (1 - alpha) * [1 1 1] + alpha * true_color;
+        plot(true_path_x(j:j+1), true_path_y(j:j+1), '-', 'Color', color, 'LineWidth', 2.5);
+    end
+    % Add legend handle for ground truth
+    legend_color = (1 - alpha_end) * [1 1 1] + alpha_end * true_color;
+    legend_handles(end+1) = plot(nan, nan, '-', 'Color', legend_color, 'LineWidth', 2.5);
+    legend_entries{end+1} = 'Ground Truth';
+    
+    % Mark start and end for ground truth
+    markerSize = 60;
+    startColor = (1 - segAlpha(1)) * [1 1 1] + segAlpha(1) * true_color;
+    endColor = (1 - segAlpha(end)) * [1 1 1] + segAlpha(end) * true_color;
+    scatter(true_path_x(1), true_path_y(1), markerSize/2, startColor, 'filled', 'MarkerEdgeColor','k');
+    scatter(true_path_x(end), true_path_y(end), markerSize/2, endColor, 'filled', 'MarkerEdgeColor','k');
+end
+
+% Plot prediction traces only for experiments specified in disp_trajectory_id
+for idx = 1:length(disp_trajectory_id)
+    i = disp_trajectory_id(idx);
+    if i <= n_experiments
+        exp = experiments{i};
+        if trial_id <= exp.n_trials
+            % Get trajectory data and convert to visual degrees
+            pred_path_x = exp.all_paths_pred_r(trial_id, :, 1) * real_dim(1) * vis_scale;
+            pred_path_y = exp.all_paths_pred_r(trial_id, :, 2) * real_dim(2) * vis_scale;
+            
+            N = length(pred_path_x);
+            segAlpha = linspace(alpha_start, alpha_end, N-1);
+            
+            % Plot predicted path with experiment-specific color gradient
+            pred_color = baseColors(color_ids(i),:);
             for j = 1:(N-1)
                 alpha = segAlpha(j);
-                color = (1 - alpha) * [1 1 1] + alpha * true_color;
-                plot(true_path_x(j:j+1), true_path_y(j:j+1), '-', 'Color', color, 'LineWidth', 2.5);
+                color = (1 - alpha) * [1 1 1] + alpha * pred_color;
+                plot(pred_path_x(j:j+1), pred_path_y(j:j+1), '-', 'Color', color, 'LineWidth', 2.5);
             end
-            % Add legend handle for ground truth
-            legend_color = (1 - alpha_end) * [1 1 1] + alpha_end * true_color;
+            % Add legend handle for this experiment's prediction
+            legend_color = (1 - alpha_end) * [1 1 1] + alpha_end * pred_color;
             legend_handles(end+1) = plot(nan, nan, '-', 'Color', legend_color, 'LineWidth', 2.5);
-            legend_entries{end+1} = 'Ground Truth';
-        end
-        
-        % Plot predicted path with experiment-specific color gradient
-        pred_color = baseColors(color_ids(i),:);
-        for j = 1:(N-1)
-            alpha = segAlpha(j);
-            color = (1 - alpha) * [1 1 1] + alpha * pred_color;
-            plot(pred_path_x(j:j+1), pred_path_y(j:j+1), '-', 'Color', color, 'LineWidth', 2.5);
-        end
-        % Add legend handle for this experiment's prediction
-        legend_color = (1 - alpha_end) * [1 1 1] + alpha_end * pred_color;
-        legend_handles(end+1) = plot(nan, nan, '-', 'Color', legend_color, 'LineWidth', 2.5);
-        legend_entries{end+1} = sprintf('%s Prediction', exp.name);
-        
-        % Optional: mark start and end points
-        if i == 1  % Only mark for ground truth
+            legend_entries{end+1} = sprintf('%s Prediction', exp.name);
+            
+            % Mark start and end for predictions
             markerSize = 60;
-            startColor = (1 - segAlpha(1)) * [1 1 1] + segAlpha(1) * true_color;
-            endColor = (1 - segAlpha(end)) * [1 1 1] + segAlpha(end) * true_color;
-            scatter(true_path_x(1), true_path_y(1), markerSize/2, startColor, 'filled', 'MarkerEdgeColor','k');
-            scatter(true_path_x(end), true_path_y(end), markerSize/2, endColor, 'filled', 'MarkerEdgeColor','k');
+            startColor = (1 - segAlpha(1)) * [1 1 1] + segAlpha(1) * pred_color;
+            endColor = (1 - segAlpha(end)) * [1 1 1] + segAlpha(end) * pred_color;
+            scatter(pred_path_x(1), pred_path_y(1), markerSize/2, startColor, 'filled', 'MarkerEdgeColor','k');
+            scatter(pred_path_x(end), pred_path_y(end), markerSize/2, endColor, 'filled', 'MarkerEdgeColor','k');
         end
-        
-        % Mark start and end for predictions
-        markerSize = 60;
-        startColor = (1 - segAlpha(1)) * [1 1 1] + segAlpha(1) * pred_color;
-        endColor = (1 - segAlpha(end)) * [1 1 1] + segAlpha(end) * pred_color;
-        scatter(pred_path_x(1), pred_path_y(1), markerSize/2, startColor, 'filled', 'MarkerEdgeColor','k');
-        scatter(pred_path_x(end), pred_path_y(end), markerSize/2, endColor, 'filled', 'MarkerEdgeColor','k');
     end
 end
 
