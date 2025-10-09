@@ -17,6 +17,7 @@ mat_folder = '\\storage1.ris.wustl.edu\kerschensteinerd\Active\Emily\RISserver\R
 fig_save_folder = '\\storage1.ris.wustl.edu\kerschensteinerd\Active\Emily\RISserver\RGC2Prey\Summary\Illustrator\'; 
 bg_type = 'blend'; % or 'grass'
 noise_level = '0.016'; % Fixed noise level for comparison
+disp_val = ''; % Fixed disparity value for comparison
 
 % Configure multiple experiments to compare
 exp_name_tag = 'observed_results_temporal-ON';
@@ -43,6 +44,7 @@ real_dim = [120 90]*4.375/0.54;
 cm_dim_scale = 4.375/0.54; % Convert cm to um
 fixed_shift = -9; % Fixed shift for correlation analysis
 
+
 % Load coverage data
 load_mat_folder = '\\storage1.ris.wustl.edu\kerschensteinerd\Active\Emily\RISserver\RGC2Prey\';
 coverage_mat_file = fullfile(load_mat_folder, 'processed_cover_radius.mat');
@@ -57,7 +59,7 @@ fprintf('Loading data for %d experiments...\n', n_experiments);
 for i = 1:n_experiments
     fprintf('Loading experiment %d/%d: %s\n', i, n_experiments, exp_names{i});
     [all_paths_r, all_paths_pred_r, seqLen, is_simple_contrast, all_id_numbers, ...
-     all_scaling_factors, all_path_cm, all_paths_bg] = loadDataset(mat_folder, exp_names{i}, bg_type, noise_level);
+     all_scaling_factors, all_path_cm, all_paths_bg] = loadDataset(mat_folder, exp_names{i}, bg_type, noise_level, disp_val);
     
     experiments{i}.name = exp_names{i};
     experiments{i}.all_paths_r = all_paths_r;
@@ -588,16 +590,22 @@ fprintf('Multi-experiment comparison complete!\n');
 %% ========== FUNCTIONS ==========
 % Most functions are copied from PathPredictDistExtraction.m
 
-function [all_paths_r, all_paths_pred_r, seqLen, is_simple_contrast, all_id_numbers, all_scaling_factors, all_path_cm, all_paths_bg] = loadDataset(mat_folder, exp_name, bg_type, noise_level)
+function [all_paths_r, all_paths_pred_r, seqLen, is_simple_contrast, all_id_numbers, all_scaling_factors, all_path_cm, all_paths_bg] = loadDataset(mat_folder, exp_name, bg_type, noise_level, disp_val)
     % Load and process a single dataset
-    filename = sprintf('%s_cricket_%s_noise%s_cricket_location_prediction_200_prediction_error_with_path.mat', ...
-                      exp_name, bg_type, noise_level);
+    % Always expect disp_val as 5th argument; if empty or '', use standard filename
+    if ~isempty(disp_val) && ~(ischar(disp_val) && isempty(strtrim(disp_val)))
+        filename = sprintf('%s_cricket_%s_disp%s_noise%s_cricket_location_prediction_200_prediction_error_with_path.mat', ...
+                          exp_name, bg_type, disp_val, noise_level);
+    else
+        filename = sprintf('%s_cricket_%s_noise%s_cricket_location_prediction_200_prediction_error_with_path.mat', ...
+                          exp_name, bg_type, noise_level);
+    end
     filepath = fullfile(mat_folder, filename);
-    
+
     if ~exist(filepath, 'file')
         error('File not found: %s', filepath);
     end
-    
+
     fprintf('  Loading: %s\n', filename);
     data = load(filepath);
     [all_paths_r, seqLen] = reshapeAllPaths(data.all_paths);
@@ -611,7 +619,7 @@ function [all_paths_r, all_paths_pred_r, seqLen, is_simple_contrast, all_id_numb
     is_simple_contrast = cellfun(@(x) contains(x, 'gray_image'), data.all_bg_file);
     all_id_numbers = data.all_id_numbers;
     all_scaling_factors = data.all_scaling_factors;
-    
+
     assert(isequal(size(all_paths_r), size(all_paths_pred_r)), ...
            'Reshaped paths and predicted paths must have the same dimensions');
 end
