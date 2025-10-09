@@ -1,6 +1,6 @@
 clear; clc;
 %% ——— User picks which experiment to plot ———
-exp_id = 23;  
+exp_id = 27;  
 % 1: Noise contribution to ON/OFF grid
 % 2: Temporal filter biphasic
 % 3: Surround inhibition
@@ -182,14 +182,14 @@ switch exp_id
         Noise_level   = {'0.016','0.032','0.064','0.128','0.256'};
         BG_folder     = repmat({'blend_'},1,length(Dates));
         LSTM_layer_n  = {'ON-T (138)', 'ON-T (950)', 'OFF-T (138)', 'OFF-T (596)', 'ON-T (238)', 'OFF-T (149)', 'ON-T (475)', 'OFF-T (298)'};
-        plot_line_ids = [5 7]; % ON [1 5 7 2] OFF [3 6 8 4]
+        plot_line_ids = [6 8 4]; % ON [1 5 7 2] OFF [3 6 8 4]
         fname_pattern = '%s_cricket_%snoise%s%s';
-        exp_name_tag = 'varied-density-constant-coverage-ON';
+        exp_name_tag = 'varied-density-constant-coverage-OFF';
 
     case 19
         title_name    = '(Model) constant density - varied coverage';
         Dates         = {'2025091802',  '2025091803',   '2025092107',  '2025092108',   '2025091812',   '2025092109',  '2025092110'};  
-        Noise_level   = {'0.0', '0.016','0.032','0.064','0.128','0.256'};
+        Noise_level   = {'0.016','0.032','0.064','0.128','0.256'};
         LSTM_layer_n  = {'ON-T (0.54)', 'OFF-T (0.54)', 'ON-T (0.76)', 'OFF-T (0.76)', 'ON-T 2 (0.54)', 'ON-T (0.382)', 'OFF-T (0.382)'};
         plot_line_ids = [7 2 4];  % ON [6 1 3] OFF [7 2 4]
         BG_folder     = repmat({'blend_'},1,length(Dates));
@@ -208,7 +208,7 @@ switch exp_id
     case 21
         title_name    = '(Model) Center-surround';
         Dates         = {'2025091802', '2025091803', '2025091805',   '2025091806',  '2025091807',  '2025091808',  '2025091809',  '2025091810'};  %, 
-        Noise_level   = {'0.0','0.016','0.032','0.064','0.128','0.256'};
+        Noise_level   = {'0.016','0.032','0.064','0.128','0.256'};
         BG_folder     = repmat({'blend_'},1,length(Dates));
         LSTM_layer_n  = {'ON-T',       'OFF-T',      'ON-T (0.006)', 'ON-T (0.18)', 'ON-T (0.36)', 'OFF-T (0.0)', 'OFF-T (0.124)', 'OFF-T (0.248)'};
         plot_line_ids = [1 3 5];  % ON [1 3 5]OFF [2 6 8]
@@ -218,7 +218,7 @@ switch exp_id
     case 22
         title_name    = '(Model) obersered predation results - Both ON and OFF';
         Dates         = {'2025092701', '2025092702'}; 
-        Noise_level   = {'0.0','0.016','0.032','0.064','0.128','0.256'};
+        Noise_level   = {'0.016','0.032','0.064','0.128','0.256'};
         BG_folder     = repmat({'blend_'},1,length(Dates));
         LSTM_layer_n  = {'Temporal', 'Nasal'};
         plot_line_ids = [1 2];
@@ -227,11 +227,52 @@ switch exp_id
      case 23
         title_name    = '(Model) biphasic temporal filter - Both ON and OFF';
         Dates         = {'2025092801',  '2025092802',   '2025092803',  '2025092804',   '2025092805',   '2025092806'};  
-        Noise_level   = {'0.0', '0.016','0.032','0.064','0.128','0.256'};
+        Noise_level   = {'0.016','0.032','0.064','0.128','0.256'};
         LSTM_layer_n  = {'ON-T (2.0)', 'ON-T (0.5)', 'ON-T (1.0)', 'OFF-T (2.0)', 'OFF-T (0.5)', 'OFF-T (1.0)'};
         plot_line_ids = [2 3 1];  % ON [2 3 1] OFF [5 6 4]
         BG_folder     = repmat({'blend_'},1,length(Dates));
         fname_pattern = '%s_cricket_%snoise%s%s';
+
+     case 24
+        title_name    = '(Model) Disparity fixed during training';
+        Dates         = {'2025093001',  '2025093002',   '2025093003',  '2025093004',   '2025093005',...
+                         '2025093006',  '2025093007',   '2025093008',  '2025093009',   '2025093010'};  
+        Noise_level   = {'0.016','0.032','0.064','0.128','0.256'};
+        LSTM_layer_n  = {'ON-T (0.5)', 'ON-T (1.0)', 'ON-T (2.0)', 'ON-T (4.0)', 'ON-T (8.0)',...
+                         'OFF-T (0.5)', 'OFF-T (1.0)', 'OFF-T (2.0)', 'OFF-T (4.0)', 'OFF-T (8.0)'};
+        plot_line_ids = [6:10];  % ON [] OFF [5 6 4]
+        BG_folder     = repmat({'blend_'},1,length(Dates));
+        fname_pattern = '%s_cricket_%snoise%s%s';
+        exp_name_tag = 'disparity-fixed-training-OFF';
+
+     case 25
+        title_name    = '(Model) Interoccular distance';
+        Dates         = {'2025092902',  '2025092904',   '2025092905',  '2025092903',   '2025092906', '2025092907'};  
+        Noise_level   = {'0.016','0.032','0.064','0.128','0.256'};
+        LSTM_layer_n  = {'ON-T (1.0)', 'ON-T (0.0)', 'ON-T (0.2)', 'OFF-T (1.0)', 'OFF-T (0.0)', 'OFF-T (0.2)'};
+        plot_line_ids = [2 1 3];  % ON [2 1 3] OFF [5 4 6]
+        BG_folder     = repmat({'blend_'},1,length(Dates));
+        fname_pattern = '%s_cricket_%snoise%s%s';
+        exp_name_tag = 'interoccular-distance-ON';
+    case 26
+        title_name    = '(Model) Interoccular distance (updated)';
+        Dates         = {'2025100602',  '2025100604',   '2025100605',  '2025100603',   '2025100606', '2025100607'};  
+        Noise_level   = {'0.016','0.032','0.064','0.128','0.256'};
+        LSTM_layer_n  = {'ON-T (1.0)', 'ON-T (0.0)', 'ON-T (0.2)', 'OFF-T (1.0)', 'OFF-T (0.0)', 'OFF-T (0.2)'};
+        plot_line_ids = [5 4 6];  % ON [2 1 3] OFF [5 4 6]
+        BG_folder     = repmat({'blend_'},1,length(Dates));
+        fname_pattern = '%s_cricket_%snoise%s%s';
+        exp_name_tag = 'interoccular-distance-OFF';
+
+    case 27
+        title_name    = '(Model) Disparity fixed during training (updated)';
+        Dates         = {'2025100501',  '2025100502',  '2025100504',   '2025100505',  '2025100506'};  
+        Noise_level   = {'0.016','0.032','0.064','0.128','0.256'};
+        LSTM_layer_n  = {'ON-T (3.0)', 'ON-T (6.0)',  'OFF-T (3.0)', 'OFF-T (6.0)', 'OFF-T (12.0)'};
+        plot_line_ids = [1:2];  % ON [] OFF [5 6 4]
+        BG_folder     = repmat({'blend_'},1,length(Dates));
+        fname_pattern = '%s_cricket_%snoise%s%s';
+        exp_name_tag = 'disparity-fixed-training-ON';
 
     
     otherwise
@@ -333,7 +374,7 @@ for i = 1:N_days
         all_fixed_cm_rms = all_fixed_cm_rms * unit_factor;
         if i == 3
             fname
-            sortrows([is_simple_contrast mean(all_fixed_rms, 2)], [1 2])
+            sortrows([is_simple_contrast(:) mean(all_fixed_rms, 2)], [1 2])
             % keyboard;
         end
         switch bg_type
@@ -398,9 +439,9 @@ legend(legs, 'Location', 'best');
 xlabel('Noise levels')
 xticks(1:numel(Noise_level)); xticklabels(Noise_level);
 xlim([0.5 numel(Noise_level)+0.5]);
-ylim([4 12]);
-yticks(4:4:12);
-yticklabels(string(num2cell(4:4:12)));
+ylim([0 12]);
+yticks(0:6:12);
+yticklabels(string(num2cell(0:6:12)));
 if is_degree
     ylabel('Error dist. (degrees)');
 else
@@ -455,3 +496,7 @@ end
 save_file_name = fullfile(fig_save_folder, sprintf('SummaryPredResults_%s_%s_%s', exp_name_tag, bg_type, object_tag));
 print(gcf, [save_file_name '.eps'], '-depsc', '-vector'); % EPS format
 print(gcf, [save_file_name '.png'], '-dpng', '-r300'); % PNG, 600 dpi
+
+
+%%
+res = runFDR_ANOVA_nonparam(DataP_v(plot_line_ids, :, :));

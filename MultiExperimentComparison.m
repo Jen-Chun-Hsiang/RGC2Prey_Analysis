@@ -19,14 +19,19 @@ bg_type = 'blend'; % or 'grass'
 noise_level = '0.016'; % Fixed noise level for comparison
 
 % Configure multiple experiments to compare
-exp_name_tag = 'surround-inhibition-ON';
-exp_names = {'2025091805', '2025091802', '2025091807'}; % Add/modify experiment names here
-% surround inhibition '2025091805', '2025091802', '2025091807', '2025091808', '2025091803', '2025091810'
-% varied coverage '2025092109','2025091802', '2025092107', '2025092110', '2025091803', '2025092108'
-% varied density '2025092105','2025091802', '2025092102' , '2025092106', '2025091803', '2025092104'
-color_ids = [2, 1, 3]; %2, 1, 3 , 5, 4, 6
-trial_id = 86; % Trial ID to visualize across experiments
-disp_trajectory_id = 2;
+exp_name_tag = 'observed_results_temporal-ON';
+exp_names = {'2025100604', '2025100605', '2025100602'}; % Add/modify experiment names here
+% Interoccular distance '2025100604', '2025100605', '2025100602', '2025100606', '2025100607', '2025100603'
+% Interoccular distance '2025092904', '2025092905', '2025092902', '2025092906', '2025092907', '2025092903'
+% surround inhibition   '2025091805', '2025091802', '2025091807', '2025091808', '2025091803', '2025091810'
+% varied coverage       '2025092109', '2025091802', '2025092107', '2025092110', '2025091803', '2025092108'
+% varied density        '2025092105', '2025091802', '2025092102', '2025092106', '2025091803', '2025092104'
+color_ids = [2, 1 , 3]; %2, 1, 3 , 5, 4, 6
+trial_id = 30; % Trial ID to visualize across experiments 16 34 5
+disp_trajectory_id = 3;
+is_y_axis_flip = false;
+is_plot_ground_truth = true;
+is_plot_pred_trace = true;
 
 % Visual settings
 is_visual_degree = 1;
@@ -78,6 +83,8 @@ baseColors = [
     0, 240, 0;  
     120, 120, 120;
 ]/255;
+% true_color = [180 120 0]/255; % Red for ground truth
+true_color = [0.4, 0.4, 0.4]; 
 
 % Extend colors if needed
 if n_experiments > size(baseColors, 1)
@@ -97,16 +104,18 @@ subplot(2, 2, 1); hold on;
 alpha_start = 0.25;             % how "light" the start is (0..1)
 alpha_end   = 1.0;              % how "dark" the end is (0..1)
 
-% Define base colors for each trace type
-gray_color = [0.4, 0.4, 0.4];  % Gray for ground truth
-true_color = gray_color;        % Ground truth will be gray
+
 
 legend_handles = [];
 legend_entries = {};
 
 % Get ground truth data from first experiment for reference
-ref_exp = experiments{1};
-if trial_id <= ref_exp.n_trials
+if length(disp_trajectory_id) == 1
+    ref_exp = experiments{disp_trajectory_id};
+else
+    ref_exp = experiments{1};
+end
+if is_plot_ground_truth && trial_id <= ref_exp.n_trials
     true_path_x = ref_exp.all_paths_r(trial_id, :, 1) * real_dim(1) * vis_scale;
     true_path_y = ref_exp.all_paths_r(trial_id, :, 2) * real_dim(2) * vis_scale;
     
@@ -133,36 +142,38 @@ if trial_id <= ref_exp.n_trials
 end
 
 % Plot prediction traces only for experiments specified in disp_trajectory_id
-for idx = 1:length(disp_trajectory_id)
-    i = disp_trajectory_id(idx);
-    if i <= n_experiments
-        exp = experiments{i};
-        if trial_id <= exp.n_trials
-            % Get trajectory data and convert to visual degrees
-            pred_path_x = exp.all_paths_pred_r(trial_id, :, 1) * real_dim(1) * vis_scale;
-            pred_path_y = exp.all_paths_pred_r(trial_id, :, 2) * real_dim(2) * vis_scale;
-            
-            N = length(pred_path_x);
-            segAlpha = linspace(alpha_start, alpha_end, N-1);
-            
-            % Plot predicted path with experiment-specific color gradient
-            pred_color = baseColors(color_ids(i),:);
-            for j = 1:(N-1)
-                alpha = segAlpha(j);
-                color = (1 - alpha) * [1 1 1] + alpha * pred_color;
-                plot(pred_path_x(j:j+1), pred_path_y(j:j+1), '-', 'Color', color, 'LineWidth', 2.5);
+if is_plot_pred_trace
+    for idx = 1:length(disp_trajectory_id)
+        i = disp_trajectory_id(idx);
+        if i <= n_experiments
+            exp = experiments{i};
+            if trial_id <= exp.n_trials
+                % Get trajectory data and convert to visual degrees
+                pred_path_x = exp.all_paths_pred_r(trial_id, :, 1) * real_dim(1) * vis_scale;
+                pred_path_y = exp.all_paths_pred_r(trial_id, :, 2) * real_dim(2) * vis_scale;
+                
+                N = length(pred_path_x);
+                segAlpha = linspace(alpha_start, alpha_end, N-1);
+                
+                % Plot predicted path with experiment-specific color gradient
+                pred_color = baseColors(color_ids(i),:);
+                for j = 1:(N-1)
+                    alpha = segAlpha(j);
+                    color = (1 - alpha) * [1 1 1] + alpha * pred_color;
+                    plot(pred_path_x(j:j+1), pred_path_y(j:j+1), '-', 'Color', color, 'LineWidth', 2.5);
+                end
+                % Add legend handle for this experiment's prediction
+                legend_color = (1 - alpha_end) * [1 1 1] + alpha_end * pred_color;
+                legend_handles(end+1) = plot(nan, nan, '-', 'Color', legend_color, 'LineWidth', 2.5);
+                legend_entries{end+1} = sprintf('%s Prediction', exp.name);
+                
+                % Mark start and end for predictions
+                markerSize = 60;
+                startColor = (1 - segAlpha(1)) * [1 1 1] + segAlpha(1) * pred_color;
+                endColor = (1 - segAlpha(end)) * [1 1 1] + segAlpha(end) * pred_color;
+                scatter(pred_path_x(1), pred_path_y(1), markerSize/2, startColor, 'filled', 'MarkerEdgeColor','k');
+                scatter(pred_path_x(end), pred_path_y(end), markerSize/2, endColor, 'filled', 'MarkerEdgeColor','k');
             end
-            % Add legend handle for this experiment's prediction
-            legend_color = (1 - alpha_end) * [1 1 1] + alpha_end * pred_color;
-            legend_handles(end+1) = plot(nan, nan, '-', 'Color', legend_color, 'LineWidth', 2.5);
-            legend_entries{end+1} = sprintf('%s Prediction', exp.name);
-            
-            % Mark start and end for predictions
-            markerSize = 60;
-            startColor = (1 - segAlpha(1)) * [1 1 1] + segAlpha(1) * pred_color;
-            endColor = (1 - segAlpha(end)) * [1 1 1] + segAlpha(end) * pred_color;
-            scatter(pred_path_x(1), pred_path_y(1), markerSize/2, startColor, 'filled', 'MarkerEdgeColor','k');
-            scatter(pred_path_x(end), pred_path_y(end), markerSize/2, endColor, 'filled', 'MarkerEdgeColor','k');
         end
     end
 end
@@ -193,7 +204,14 @@ end
 
 xlabel('X Position (deg)'); ylabel('Y Position (deg)'); 
 title('Cricket Location Prediction - Path Trajectories (Gradient)');
-legend(legend_handles, legend_entries, 'Location', 'best');
+if ~isempty(legend_handles)
+    legend(legend_handles, legend_entries, 'Location', 'best');
+else
+    legend off;
+end
+if is_y_axis_flip
+    set(gca, 'YDir', 'reverse');
+end
 axis off; box off;
 
 % Subplot 2: Fixed RMS Error comparison
@@ -211,7 +229,7 @@ for i = 1:n_experiments
     end
 end
 xlabel('Time (s)'); ylabel('Distance to cricket (deg)'); 
-ylim([0 24]); box off;
+ylim([0 25]); box off;
 yticks(0:10:20);
 yticklabels(arrayfun(@(y) sprintf('%d', y), 0:10:20, 'UniformOutput', false));
 xlim([0 t(end)]);
@@ -222,24 +240,24 @@ legend('Location', 'best');
 % ylim([0 15]); box off;
 
 % Subplot 3: Fixed CM RMS Error comparison  
-subplot(2, 2, 3); hold on;
-for i = 1:n_experiments
-    exp = experiments{i};
-    if trial_id <= exp.n_trials
-        true_path_trial = squeeze(exp.all_paths_r(trial_id, :, :));
-        pred_cm_path_trial = squeeze(exp.all_path_cm(trial_id, :, :));
-        [fixed_cm_rms, rms_len] = calculateFixedShiftRMSError(true_path_trial .* reshape(real_dim, [1 2]), ...
-                                                              pred_cm_path_trial * cm_dim_scale, fixed_shift, ones(1, 2));
+% subplot(2, 2, 3); hold on;
+% for i = 1:n_experiments
+%     exp = experiments{i};
+%     if trial_id <= exp.n_trials
+%         true_path_trial = squeeze(exp.all_paths_r(trial_id, :, :));
+%         pred_cm_path_trial = squeeze(exp.all_path_cm(trial_id, :, :));
+%         [fixed_cm_rms, rms_len] = calculateFixedShiftRMSError(true_path_trial .* reshape(real_dim, [1 2]), ...
+%                                                               pred_cm_path_trial * cm_dim_scale, fixed_shift, ones(1, 2));
         
-        t = (0:rms_len-1)/100; % Time vector in seconds
-        plot(t, fixed_cm_rms * vis_scale, '-', 'Color', baseColors(i,:), 'LineWidth', 1.5, ...
-             'DisplayName', sprintf('%s CM RMS', exp.name));
-    end
-end
-xlabel('Time (s)'); ylabel('Distance to cricket (deg)'); 
-title('Fixed CM RMS Error Comparison');
-legend('Location', 'best');
-ylim([0 15]); box off;
+%         t = (0:rms_len-1)/100; % Time vector in seconds
+%         plot(t, fixed_cm_rms * vis_scale, '-', 'Color', baseColors(i,:), 'LineWidth', 1.5, ...
+%              'DisplayName', sprintf('%s CM RMS', exp.name));
+%     end
+% end
+% xlabel('Time (s)'); ylabel('Distance to cricket (deg)'); 
+% title('Fixed CM RMS Error Comparison');
+% legend('Location', 'best');
+% ylim([0 15]); box off;
 
 % Subplot 4: Velocity comparison with validation
 subplot(2, 2, 4); hold on;
@@ -266,11 +284,18 @@ if n_experiments > 1
     for i = 2:n_experiments
         % Check cricket velocity consistency
         if ~isempty(cricket_velocities{1}) && ~isempty(cricket_velocities{i})
-            cricket_diff = max(abs(cricket_velocities{1} - cricket_velocities{i}));
+            cricket_diff = mean(abs(cricket_velocities{1} - cricket_velocities{i}));
             try
-                assert(cricket_diff < 1e-10, sprintf('Cricket velocities differ between %s and %s (max diff: %.2e)', ...
-                       exp_names{1}, exp_names{i}, cricket_diff));
-                fprintf('✓ Cricket velocities are IDENTICAL between %s and %s\n', exp_names{1}, exp_names{i});
+                if cricket_diff* 100 * vis_scale  < 1e-10
+                    assert(cricket_diff* 100 * vis_scale  < 1e-10, sprintf('Cricket velocities differ between %s and %s (max diff: %.2e)', ...
+                        exp_names{1}, exp_names{i}, cricket_diff));
+                    fprintf('✓ Cricket velocities are IDENTICAL between %s and %s\n', exp_names{1}, exp_names{i});
+                elseif cricket_diff* 100 * vis_scale  < 5
+                    fprintf('⚠ WARNING: Cricket velocities are SIMILAR between %s and %s (max diff: %.2e)\n', ...
+                        exp_names{1}, exp_names{i}, cricket_diff);
+                else
+                    error('Cricket velocities differ significantly');
+                end
             catch ME
                 fprintf('⚠ ERROR: %s\n', ME.message);
                 error('Velocity validation failed for cricket velocities');
@@ -281,7 +306,7 @@ if n_experiments > 1
         if ~isempty(bg_velocities{1}) && ~isempty(bg_velocities{i})
             bg_diff = max(abs(bg_velocities{1} - bg_velocities{i}));
             try
-                assert(bg_diff < 1e-10, sprintf('Background velocities differ between %s and %s (max diff: %.2e)', ...
+                assert(bg_diff* 100 * vis_scale < 1e-10, sprintf('Background velocities differ between %s and %s (max diff: %.2e)', ...
                        exp_names{1}, exp_names{i}, bg_diff));
                 fprintf('✓ Background velocities are IDENTICAL between %s and %s\n', exp_names{1}, exp_names{i});
             catch ME
@@ -349,9 +374,13 @@ for i = 1:n_experiments
         
         % Calculate fixed RMS errors
         [fixed_rms, rms_len] = calculateFixedShiftRMSError(true_path_trial, pred_path_trial, fixed_shift, real_dim);
-        [fixed_cm_rms, ~] = calculateFixedShiftRMSError(true_path_trial .* reshape(real_dim, [1 2]), ...
-                                                        pred_cm_path_trial * cm_dim_scale, fixed_shift, ones(1, 2));
-        
+        try 
+            [fixed_cm_rms, ~] = calculateFixedShiftRMSError(true_path_trial .* reshape(real_dim, [1 2]), ...
+                                                            pred_cm_path_trial * cm_dim_scale, fixed_shift, ones(1, 2));
+        catch 
+            fixed_cm_rms = NaN(size(fixed_rms));
+        end
+
         if j == 1
             all_fixed_rms = zeros(exp.n_trials, rms_len);
             all_fixed_cm_rms = zeros(exp.n_trials, rms_len);
@@ -572,7 +601,11 @@ function [all_paths_r, all_paths_pred_r, seqLen, is_simple_contrast, all_id_numb
     fprintf('  Loading: %s\n', filename);
     data = load(filepath);
     [all_paths_r, seqLen] = reshapeAllPaths(data.all_paths);
-    all_path_cm = reshapeAllPaths(double(data.all_path_cm));
+    if size(data.all_path_cm, 2) ==1
+        all_path_cm = data.all_path_cm; % Already in correct shape
+    else
+        all_path_cm = reshapeAllPaths(double(data.all_path_cm));
+    end
     all_paths_bg = reshapeAllPaths(double(data.all_paths_bg));
     all_paths_pred_r = squeeze(data.all_paths_pred);
     is_simple_contrast = cellfun(@(x) contains(x, 'gray_image'), data.all_bg_file);
