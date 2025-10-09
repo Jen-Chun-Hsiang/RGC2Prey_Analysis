@@ -17,19 +17,21 @@ mat_folder = '\\storage1.ris.wustl.edu\kerschensteinerd\Active\Emily\RISserver\R
 fig_save_folder = '\\storage1.ris.wustl.edu\kerschensteinerd\Active\Emily\RISserver\RGC2Prey\Summary\Illustrator\'; 
 bg_type = 'blend'; % or 'grass'
 noise_level = '0.016'; % Fixed noise level for comparison
-disp_val = ''; % Fixed disparity value for comparison
+% disparity_sets = {}; % e.g., {} to compare different experiments
+disparity_sets = {'0.0','3.0','6.0','12.0'}; % e.g., {'0.0','3.0','6.0','12.0'} (id 20) to compare fixed disparity runs
 
 % Configure multiple experiments to compare
-exp_name_tag = 'observed_results_temporal-ON';
-exp_names = {'2025100604', '2025100605', '2025100602'}; % Add/modify experiment names here
+exp_name_tag = 'Fixed_disparity_OFF';
+exp_names = {'2025100603'}; % Add/modify experiment names here
+% Fixed disparity training '2025100501',  '2025100502',  '2025100503', '2025100504',   '2025100505',  '2025100506'
 % Interoccular distance '2025100604', '2025100605', '2025100602', '2025100606', '2025100607', '2025100603'
 % Interoccular distance '2025092904', '2025092905', '2025092902', '2025092906', '2025092907', '2025092903'
 % surround inhibition   '2025091805', '2025091802', '2025091807', '2025091808', '2025091803', '2025091810'
 % varied coverage       '2025092109', '2025091802', '2025092107', '2025092110', '2025091803', '2025092108'
 % varied density        '2025092105', '2025091802', '2025092102', '2025092106', '2025091803', '2025092104'
-color_ids = [2, 1 , 3]; %2, 1, 3 , 5, 4, 6
-trial_id = 30; % Trial ID to visualize across experiments 16 34 5
-disp_trajectory_id = 3;
+color_ids = [5, 6, 7, 8]; %2, 1, 3 , 5, 4, 6
+trial_id = 20; % Trial ID to visualize across experiments 16 34 5
+disp_trajectory_id = 4;
 is_y_axis_flip = false;
 is_plot_ground_truth = true;
 is_plot_pred_trace = true;
@@ -45,23 +47,69 @@ cm_dim_scale = 4.375/0.54; % Convert cm to um
 fixed_shift = -9; % Fixed shift for correlation analysis
 
 
+if isempty(disparity_sets)
+    use_disparity_mode = false;
+    comparison_labels = exp_names;
+    base_exp_name = '';
+else
+    use_disparity_mode = true;
+    comparison_labels = disparity_sets;
+    base_exp_name = exp_names{1};
+end
+
+n_experiments = numel(comparison_labels);
+if n_experiments == 0
+    error('Either exp_names or disparity_sets must contain at least one entry.');
+end
+
+if isempty(color_ids) || numel(color_ids) < n_experiments
+    color_ids = 1:n_experiments;
+else
+    color_ids = color_ids(1:n_experiments);
+end
+disp_trajectory_id = min(max(disp_trajectory_id, 1), n_experiments);
+
+if use_disparity_mode
+    comparison_mode_label = 'Disparity';
+    comparison_title_suffix = 'Disparities';
+    output_tag = sprintf('%s_%s_disp', exp_name_tag, base_exp_name);
+else
+    comparison_mode_label = 'Experiment';
+    comparison_title_suffix = 'Experiments';
+    output_tag = exp_name_tag;
+end
+
+
 % Load coverage data
 load_mat_folder = '\\storage1.ris.wustl.edu\kerschensteinerd\Active\Emily\RISserver\RGC2Prey\';
 coverage_mat_file = fullfile(load_mat_folder, 'processed_cover_radius.mat');
 cover_radius = load(coverage_mat_file, 'file_index_list', 'processed_cover_radius');
 cover_radius = [cover_radius.file_index_list(:) cover_radius.processed_cover_radius(:)];
 
-%% Load data for all experiments
-n_experiments = length(exp_names);
+%% Load data for all comparisons
 experiments = cell(n_experiments, 1);
+comparison_names = cell(n_experiments, 1);
+comparison_disp_vals = cell(n_experiments, 1);
 
-fprintf('Loading data for %d experiments...\n', n_experiments);
+fprintf('Loading data for %d %s comparisons...\n', n_experiments, lower(comparison_mode_label));
 for i = 1:n_experiments
-    fprintf('Loading experiment %d/%d: %s\n', i, n_experiments, exp_names{i});
+    if use_disparity_mode
+        current_exp_name = base_exp_name;
+        current_disp_val = comparison_labels{i};
+        current_label = sprintf('disp %s', current_disp_val);
+    else
+        current_exp_name = comparison_labels{i};
+        current_disp_val = '';
+        current_label = current_exp_name;
+    end
+
+    fprintf('Loading comparison %d/%d: %s\n', i, n_experiments, current_label);
     [all_paths_r, all_paths_pred_r, seqLen, is_simple_contrast, all_id_numbers, ...
-     all_scaling_factors, all_path_cm, all_paths_bg] = loadDataset(mat_folder, exp_names{i}, bg_type, noise_level, disp_val);
+     all_scaling_factors, all_path_cm, all_paths_bg] = loadDataset(mat_folder, current_exp_name, bg_type, noise_level, current_disp_val);
     
-    experiments{i}.name = exp_names{i};
+    experiments{i}.name = current_label;
+    experiments{i}.source_exp = current_exp_name;
+    experiments{i}.disp_value = current_disp_val;
     experiments{i}.all_paths_r = all_paths_r;
     experiments{i}.all_paths_pred_r = all_paths_pred_r;
     experiments{i}.all_path_cm = all_path_cm;
@@ -71,19 +119,23 @@ for i = 1:n_experiments
     experiments{i}.all_id_numbers = all_id_numbers;
     experiments{i}.all_scaling_factors = all_scaling_factors;
     experiments{i}.n_trials = size(all_paths_r, 1);
-    
+
+    comparison_names{i} = current_label;
+    comparison_disp_vals{i} = current_disp_val;
     fprintf('  - Loaded %d trials with sequence length %d\n', experiments{i}.n_trials, seqLen);
 end
 
 %% 1. Single trial visualization across experiments with different colors
 baseColors = [
-    180, 0, 180;   % ON-Temporal
-    120, 0, 120;   % ON-Nasal  
-    240, 0, 240;
-    0, 180, 0;   % OFF-Temporal
-    0, 120, 0;   % OFF-Nasal
-    0, 240, 0;  
-    120, 120, 120;
+    60, 0, 60;     % 1 ON-Temporal
+    120, 0, 120;   % 2 OFF-Temporal
+    180, 0, 180;   % 3 OFF-Nasal
+    240, 0, 240;   % 4
+    0, 60, 0;      % 5
+    0, 120, 0;     % 6
+    0, 180, 0;     % 7
+    0, 240, 0;     % 8
+    120, 120, 120; % 9
 ]/255;
 % true_color = [180 120 0]/255; % Red for ground truth
 true_color = [0.4, 0.4, 0.4]; 
@@ -97,7 +149,7 @@ end
 fprintf('\nCreating single trial visualization for trial %d...\n', trial_id);
 
 % Figure 1: Single trial paths comparison
-figure('Name', sprintf('Single Trial Comparison - Trial %d', trial_id), 'Position', [100, 100, 1200, 800]);
+figure('Name', sprintf('Single Trial Comparison (%s) - Trial %d', comparison_mode_label, trial_id), 'Position', [100, 100, 1200, 800]);
 
 % Subplot 1: Path trajectories with gradient colors
 subplot(2, 2, 1); hold on;
@@ -205,7 +257,7 @@ if is_visual_degree
 end
 
 xlabel('X Position (deg)'); ylabel('Y Position (deg)'); 
-title('Cricket Location Prediction - Path Trajectories (Gradient)');
+title(sprintf('Cricket Location Prediction - Path Trajectories (%s)', comparison_mode_label));
 if ~isempty(legend_handles)
     legend(legend_handles, legend_entries, 'Location', 'best');
 else
@@ -231,9 +283,9 @@ for i = 1:n_experiments
     end
 end
 xlabel('Time (s)'); ylabel('Distance to cricket (deg)'); 
-ylim([0 25]); box off;
-yticks(0:10:20);
-yticklabels(arrayfun(@(y) sprintf('%d', y), 0:10:20, 'UniformOutput', false));
+ylim([0 35]); box off;
+yticks(0:15:30);
+yticklabels(arrayfun(@(y) sprintf('%d', y), 0:15:30, 'UniformOutput', false));
 xlim([0 t(end)]);
 xticks(0:0.9:1.8);
 xticklabels(arrayfun(@(x) sprintf('%.1f', x), 0:0.9:1.8, 'UniformOutput', false));
@@ -290,11 +342,11 @@ if n_experiments > 1
             try
                 if cricket_diff* 100 * vis_scale  < 1e-10
                     assert(cricket_diff* 100 * vis_scale  < 1e-10, sprintf('Cricket velocities differ between %s and %s (max diff: %.2e)', ...
-                        exp_names{1}, exp_names{i}, cricket_diff));
-                    fprintf('✓ Cricket velocities are IDENTICAL between %s and %s\n', exp_names{1}, exp_names{i});
+                        comparison_names{1}, comparison_names{i}, cricket_diff));
+                    fprintf('✓ Cricket velocities are IDENTICAL between %s and %s\n', comparison_names{1}, comparison_names{i});
                 elseif cricket_diff* 100 * vis_scale  < 5
                     fprintf('⚠ WARNING: Cricket velocities are SIMILAR between %s and %s (max diff: %.2e)\n', ...
-                        exp_names{1}, exp_names{i}, cricket_diff);
+                        comparison_names{1}, comparison_names{i}, cricket_diff);
                 else
                     error('Cricket velocities differ significantly');
                 end
@@ -308,9 +360,9 @@ if n_experiments > 1
         if ~isempty(bg_velocities{1}) && ~isempty(bg_velocities{i})
             bg_diff = max(abs(bg_velocities{1} - bg_velocities{i}));
             try
-                assert(bg_diff* 100 * vis_scale < 1e-10, sprintf('Background velocities differ between %s and %s (max diff: %.2e)', ...
-                       exp_names{1}, exp_names{i}, bg_diff));
-                fprintf('✓ Background velocities are IDENTICAL between %s and %s\n', exp_names{1}, exp_names{i});
+          assert(bg_diff* 100 * vis_scale < 1e-10, sprintf('Background velocities differ between %s and %s (max diff: %.2e)', ...
+              comparison_names{1}, comparison_names{i}, bg_diff));
+          fprintf('✓ Background velocities are IDENTICAL between %s and %s\n', comparison_names{1}, comparison_names{i});
             catch ME
                 fprintf('⚠ ERROR: %s\n', ME.message);
                 error('Velocity validation failed for background velocities');
@@ -344,14 +396,14 @@ yticks(0:50:150);
 yticklabels(arrayfun(@(y) sprintf('%d', y), 0:50:150, 'UniformOutput', false));
 
 %%
-save_file_name = fullfile(fig_save_folder, sprintf('PredictionTrace_%s_%s_%d', exp_name_tag, noise_level, trial_id));
+save_file_name = fullfile(fig_save_folder, sprintf('PredictionTrace_%s_%s_%d', output_tag, noise_level, trial_id));
 print(gcf, [save_file_name '.eps'], '-depsc', '-vector'); % EPS format
 print(gcf, [save_file_name '.png'], '-dpng', '-r300'); % PNG, 600 dpi
 
-%% 2. Fixed RMS and CM RMS as function of time frames across experiments
-fprintf('Creating fixed RMS error comparison plots...\n');
+%% 2. Fixed RMS and CM RMS as function of time frames across comparisons
+fprintf('Creating fixed RMS error comparison plots across %s...\n', lower(comparison_title_suffix));
 
-figure('Name', 'Fixed RMS Error Comparison Across Experiments', 'Position', [200, 150, 1400, 600]);
+figure('Name', sprintf('Fixed RMS Error Comparison Across %s', comparison_title_suffix), 'Position', [200, 150, 1400, 600]);
 
 % Calculate statistics for each experiment
 exp_stats = cell(n_experiments, 1);
@@ -431,7 +483,7 @@ title('Fixed RMS Error Across Experiments');
 ylim([0 15]); box off;
 
 % Create legend
-legend_entries = arrayfun(@(i) exp_names{i}, 1:n_experiments, 'UniformOutput', false);
+legend_entries = comparison_names;
 legend(legend_entries, 'Location', 'best');
 
 % Plot Fixed CM RMS Error  
@@ -447,6 +499,14 @@ xlabel('Time (s)'); ylabel('Distance to cricket (deg)');
 title('Fixed CM RMS Error Across Experiments');
 ylim([0 15]); box off;
 legend(legend_entries, 'Location', 'best');
+
+%%  Compare the results of both experiments
+% need to save the first DataTab as DataTab2, and run the script with another experiment
+if exist('DataTab2', 'var')
+    DataTabAll = [sortrows(DataTab2, 1), sortrows(DataTab, 1)];
+    DataTabAll= sortrows(DataTabAll, [2 6])
+end
+
 
 %% 3. Velocity comparison and path consistency verification
 fprintf('Verifying path consistency across experiments...\n');

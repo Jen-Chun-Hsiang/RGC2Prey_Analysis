@@ -37,7 +37,7 @@ switch exp_id
         fname_pattern = '%s_cricket_%s_disp%s_noise%s%s';
     case 3
         title_name    = '(Model) Fixed disparity test (trained dynamic)';
-        Dates         = {'2025100603'};
+        Dates         = {'2025100602'};
         Second_name   = 'disp';
         Second_level  = {'0.0', '3.0', '6.0', '12.0'};
         Noise_level   = {'0.016','0.032','0.064', '0.128','0.256'};
@@ -46,7 +46,7 @@ switch exp_id
                          '1.0', '0.0', '1.5'};
         plot_line_ids = [1:4];
         fname_pattern = '%s_cricket_%s_disp%s_noise%s%s';
-        exp_name_tag = 'fixed-disparity-test-OFF';
+        exp_name_tag = 'fixed-disparity-test-ON';
     otherwise
         error('exp_id must be 1, 2 or 3');
 end

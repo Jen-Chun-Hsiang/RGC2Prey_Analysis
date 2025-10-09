@@ -266,10 +266,10 @@ switch exp_id
 
     case 27
         title_name    = '(Model) Disparity fixed during training (updated)';
-        Dates         = {'2025100501',  '2025100502',  '2025100504',   '2025100505',  '2025100506'};  
+        Dates         = {'2025100501',  '2025100502',  '2025100503', '2025100504',   '2025100505',  '2025100506'};  
         Noise_level   = {'0.016','0.032','0.064','0.128','0.256'};
-        LSTM_layer_n  = {'ON-T (3.0)', 'ON-T (6.0)',  'OFF-T (3.0)', 'OFF-T (6.0)', 'OFF-T (12.0)'};
-        plot_line_ids = [1:2];  % ON [] OFF [5 6 4]
+        LSTM_layer_n  = {'ON-T (3.0)', 'ON-T (6.0)',  'ON-T (12.0)', 'OFF-T (3.0)', 'OFF-T (6.0)', 'OFF-T (12.0)'};
+        plot_line_ids = [1:3];  % ON [] OFF [5 6 4]
         BG_folder     = repmat({'blend_'},1,length(Dates));
         fname_pattern = '%s_cricket_%snoise%s%s';
         exp_name_tag = 'disparity-fixed-training-ON';
