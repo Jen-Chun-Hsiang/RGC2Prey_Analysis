@@ -17,20 +17,20 @@ mat_folder = '\\storage1.ris.wustl.edu\kerschensteinerd\Active\Emily\RISserver\R
 fig_save_folder = '\\storage1.ris.wustl.edu\kerschensteinerd\Active\Emily\RISserver\RGC2Prey\Summary\Illustrator\'; 
 bg_type = 'blend'; % or 'grass'
 noise_level = '0.016'; % Fixed noise level for comparison
-% disparity_sets = {}; % e.g., {} to compare different experiments
-disparity_sets = {'0.0','3.0','6.0','12.0'}; % e.g., {'0.0','3.0','6.0','12.0'} (id 20) to compare fixed disparity runs
+disparity_sets = {}; % e.g., {} to compare different experiments
+%disparity_sets = {'0.0','3.0','6.0','12.0'}; % e.g., {'0.0','3.0','6.0','12.0'} (id 20) to compare fixed disparity runs
 
 % Configure multiple experiments to compare
-exp_name_tag = 'Fixed_disparity_OFF';
-exp_names = {'2025100603'}; % Add/modify experiment names here
-% Fixed disparity training '2025100501',  '2025100502',  '2025100503', '2025100504',   '2025100505',  '2025100506'
+exp_name_tag = 'Fixed_disparity_training_OFF';
+exp_names = { '2025100508','2025100504','2025100505','2025100506'}; % Add/modify experiment names here
+% Fixed disparity training '2025100507', '2025100501',  '2025100502',  '2025100503', '2025100508','2025100504','2025100505','2025100506'
 % Interoccular distance '2025100604', '2025100605', '2025100602', '2025100606', '2025100607', '2025100603'
 % Interoccular distance '2025092904', '2025092905', '2025092902', '2025092906', '2025092907', '2025092903'
 % surround inhibition   '2025091805', '2025091802', '2025091807', '2025091808', '2025091803', '2025091810'
 % varied coverage       '2025092109', '2025091802', '2025092107', '2025092110', '2025091803', '2025092108'
 % varied density        '2025092105', '2025091802', '2025092102', '2025092106', '2025091803', '2025092104'
 color_ids = [5, 6, 7, 8]; %2, 1, 3 , 5, 4, 6
-trial_id = 20; % Trial ID to visualize across experiments 16 34 5
+trial_id = 5; % Trial ID to visualize across experiments 16 34 5
 disp_trajectory_id = 4;
 is_y_axis_flip = false;
 is_plot_ground_truth = true;
@@ -283,7 +283,7 @@ for i = 1:n_experiments
     end
 end
 xlabel('Time (s)'); ylabel('Distance to cricket (deg)'); 
-ylim([0 35]); box off;
+ylim([0 32]); box off;
 yticks(0:15:30);
 yticklabels(arrayfun(@(y) sprintf('%d', y), 0:15:30, 'UniformOutput', false));
 xlim([0 t(end)]);

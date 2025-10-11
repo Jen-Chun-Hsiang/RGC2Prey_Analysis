@@ -1,6 +1,6 @@
 clear; clc;
 %% ——— User picks which experiment to plot ———
-exp_id = 3;  
+exp_id = 4;  
 % 1: Noise contribution to ON/OFF grid
 % 2: Temporal filter biphasic
 % 3: Surround inhibition
@@ -47,6 +47,19 @@ switch exp_id
         plot_line_ids = [1:4];
         fname_pattern = '%s_cricket_%s_disp%s_noise%s%s';
         exp_name_tag = 'fixed-disparity-test-ON';
+    
+    case 4
+        title_name    = '(Model) Fixed disparity test (trained dynamic)';
+        Dates         = {'2025100506'};
+        Second_name   = 'disp';
+        Second_level  = {'0.0', '3.0', '6.0', '12.0'};
+        Noise_level   = {'0.016','0.032','0.064', '0.128','0.256'};
+        BG_folder     = 'blend';
+        LSTM_layer_n  = {'No fixed', '0.5', '2.0', '4.0', '16.0', '8.0',...
+                         '1.0', '0.0', '1.5'};
+        plot_line_ids = [1:4];
+        fname_pattern = '%s_cricket_%s_disp%s_noise%s%s';
+        exp_name_tag = 'fixed-disparity-test_fix_training_ON';
     otherwise
         error('exp_id must be 1, 2 or 3');
 end
