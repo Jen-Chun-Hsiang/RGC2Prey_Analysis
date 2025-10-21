@@ -1,6 +1,6 @@
 clear; clc;
 %% ——— User picks which experiment to plot ———
-exp_id = 27;  
+exp_id = 29;  
 % 1: Noise contribution to ON/OFF grid
 % 2: Temporal filter biphasic
 % 3: Surround inhibition
@@ -262,7 +262,7 @@ switch exp_id
         plot_line_ids = [5 4 6];  % ON [2 1 3] OFF [5 4 6]
         BG_folder     = repmat({'blend_'},1,length(Dates));
         fname_pattern = '%s_cricket_%snoise%s%s';
-        exp_name_tag = 'interoccular-distance-OFF';
+        exp_name_tag = 'interoccular-distance-OFF-incorrect';
 
     case 27
         title_name    = '(Model) Disparity fixed during training (updated)';
@@ -273,6 +273,31 @@ switch exp_id
         BG_folder     = repmat({'blend_'},1,length(Dates));
         fname_pattern = '%s_cricket_%snoise%s%s';
         exp_name_tag = 'disparity-fixed-training-ON';
+
+    case 28
+        title_name    = '(Model) Disparity fixed during training with fixed disparity in testing';
+        Dates         = {'2025100602', '2025100501',  '2025100502',  '2025100503', '2025100507',...
+                         '2025100603', '2025100504',   '2025100505',  '2025100506',  '2025100508'};  
+        Noise_level   = {'0.016','0.032','0.064','0.128','0.256'};
+        disparity_test = '3.0';
+        LSTM_layer_n  = {'ON-T',  'ON-T (3.0)',  'ON-T (6.0)',  'ON-T (12.0)',  'ON-T (0.0)',...
+                         'OFF-T', 'OFF-T (3.0)', 'OFF-T (6.0)', 'OFF-T (12.0)', 'OFF-T (0.0)'};
+        plot_line_ids = [1:5];  % ON [] OFF [5 6 4]
+        BG_folder     = repmat({'blend_'},1,length(Dates));
+        fname_pattern = '%s_cricket_%sdisp%s_noise%s%s';
+        exp_name_tag = sprintf('disparity-fixed-training-fixed-test-%s-ON', disparity_test);
+
+    case 29
+        title_name    = '(Model) Interoccular distance (updated)';
+        Dates         = {'2025101402',  '2025101404',   '2025101405',  '2025101408',...
+                         '2025101403',  '2025101406',   '2025101407',  '2025101409'};  
+        Noise_level   = {'0.016','0.032','0.064','0.128','0.256'};
+        LSTM_layer_n  = {'ON-T (1.0)', 'ON-T (0.0)', 'ON-T (0.2)', 'ON-T (0.5)',...
+                         'OFF-T (1.0)',  'OFF-T (0.0)',  'OFF-T (0.2)', 'OFF-T (0.5)'};
+        plot_line_ids = [6 7 8 5];  % ON [2 1 3] OFF [5 4 6]
+        BG_folder     = repmat({'blend_'},1,length(Dates));
+        fname_pattern = '%s_cricket_%snoise%s%s';
+        exp_name_tag = 'interoccular-distance-OFF';
 
     
     otherwise
@@ -325,7 +350,12 @@ for i = 1:N_days
         else
             bg = '';
         end
-        fname = sprintf(fname_pattern, Dates{i}, bg, Noise_level{j}, Tag);
+        % Build filename based on pattern
+        if contains(fname_pattern, 'disp%s')
+            fname = sprintf(fname_pattern, Dates{i}, bg, disparity_test, Noise_level{j}, Tag);
+        else
+            fname = sprintf(fname_pattern, Dates{i}, bg, Noise_level{j}, Tag);
+        end
         load(fullfile(Folder_Name, fname), 'test_losses', 'training_losses',...
          'all_paths', 'all_paths_pred', 'all_id_numbers', 'all_scaling_factors', 'all_bg_file', 'all_path_cm');
         n_sample      = numel(test_losses);
@@ -480,10 +510,7 @@ ylim([0 0.5])
 yticks(0.0:0.1:0.5);
 
 sgtitle(sprintf('%s in cricket prediction', title_name))
-%%
-% print(hFig, "myHighResPlot.png", "-dpng", "-r300");
-%%
-% print("myHighResPlot.png", "-dpng", "-r300");
+
 
 
 %%

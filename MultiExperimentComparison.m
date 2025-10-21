@@ -21,20 +21,28 @@ disparity_sets = {}; % e.g., {} to compare different experiments
 %disparity_sets = {'0.0','3.0','6.0','12.0'}; % e.g., {'0.0','3.0','6.0','12.0'} (id 20) to compare fixed disparity runs
 
 % Configure multiple experiments to compare
-exp_name_tag = 'Fixed_disparity_training_OFF';
-exp_names = { '2025100508','2025100504','2025100505','2025100506'}; % Add/modify experiment names here
+exp_name_tag = 'Demo_only_center';
+exp_names = { '2025101402'}; % Add/modify experiment names here
 % Fixed disparity training '2025100507', '2025100501',  '2025100502',  '2025100503', '2025100508','2025100504','2025100505','2025100506'
+% Interocular distance '2025101402',  '2025101408', '2025101404', '2025101403',  '2025101409', '2025101406' (29)
 % Interoccular distance '2025100604', '2025100605', '2025100602', '2025100606', '2025100607', '2025100603'
 % Interoccular distance '2025092904', '2025092905', '2025092902', '2025092906', '2025092907', '2025092903'
 % surround inhibition   '2025091805', '2025091802', '2025091807', '2025091808', '2025091803', '2025091810'
 % varied coverage       '2025092109', '2025091802', '2025092107', '2025092110', '2025091803', '2025092108'
 % varied density        '2025092105', '2025091802', '2025092102', '2025092106', '2025091803', '2025092104'
-color_ids = [5, 6, 7, 8]; %2, 1, 3 , 5, 4, 6
+color_ids = [3]; %, 8, 7, 6
 trial_id = 5; % Trial ID to visualize across experiments 16 34 5
-disp_trajectory_id = 4;
-is_y_axis_flip = false;
+disp_trajectory_id = 1;
+is_y_axis_flip = true; % set true only for movie drawing
 is_plot_ground_truth = true;
-is_plot_pred_trace = true;
+is_plot_pred_trace = false;
+
+% Disparity shift trace control: 'none', 'left', or 'right'
+% 'none': use all_paths_pred_r as usual
+% 'left': replace predicted trace with top_img_positions_shifted (left eye)
+% 'right': replace predicted trace with top_img_disparity_positions_shifted (right eye)
+disparity_shift_trace = 'right'; % Options: 'none', 'left', 'right'
+interocular_dist = 1.0; % Interocular distance in cm for reconstruction
 
 % Visual settings
 is_visual_degree = 1;
@@ -90,6 +98,8 @@ cover_radius = [cover_radius.file_index_list(:) cover_radius.processed_cover_rad
 experiments = cell(n_experiments, 1);
 comparison_names = cell(n_experiments, 1);
 comparison_disp_vals = cell(n_experiments, 1);
+bounds = [-100, 100, -60, 60];
+interocular_dist = 1.0;
 
 fprintf('Loading data for %d %s comparisons...\n', n_experiments, lower(comparison_mode_label));
 for i = 1:n_experiments
@@ -136,9 +146,12 @@ baseColors = [
     0, 180, 0;     % 7
     0, 240, 0;     % 8
     120, 120, 120; % 9
+    180, 120, 0;   % 10
+    0, 120, 180;   %11
+    120, 120, 180; %12
 ]/255;
-% true_color = [180 120 0]/255; % Red for ground truth
-true_color = [0.4, 0.4, 0.4]; 
+true_color = baseColors(10, :); % Red for ground truth (for movie frame)
+%true_color = [0.4, 0.4, 0.4]; 
 
 % Extend colors if needed
 if n_experiments > size(baseColors, 1)
@@ -202,9 +215,31 @@ if is_plot_pred_trace
         if i <= n_experiments
             exp = experiments{i};
             if trial_id <= exp.n_trials
-                % Get trajectory data and convert to visual degrees
-                pred_path_x = exp.all_paths_pred_r(trial_id, :, 1) * real_dim(1) * vis_scale;
-                pred_path_y = exp.all_paths_pred_r(trial_id, :, 2) * real_dim(2) * vis_scale;
+                % Get trajectory data - apply disparity shift if requested
+                if strcmp(disparity_shift_trace, 'none')
+                    % Use standard predicted path
+                    pred_path_normalized = squeeze(exp.all_paths_pred_r(trial_id, :, :));
+                else
+                    % Reconstruct shifted positions using disparity
+                    path = squeeze(exp.all_paths_r(trial_id, :, :));
+                    scaling_factors = exp.all_scaling_factors(trial_id, :);
+                    bounds = []; % No bounds adjustment by default
+                    
+                    [top_img_positions_shifted, top_img_disparity_positions_shifted, disparity_deg, distances] = ...
+                        reconstruct_top_img_positions_shifted(path, scaling_factors, interocular_dist, bounds);
+                    
+                    if strcmp(disparity_shift_trace, 'left')
+                        pred_path_normalized = top_img_positions_shifted;
+                    elseif strcmp(disparity_shift_trace, 'right')
+                        pred_path_normalized = top_img_disparity_positions_shifted;
+                    else
+                        error('disparity_shift_trace must be ''none'', ''left'', or ''right''');
+                    end
+                end
+                
+                % Convert to visual degrees
+                pred_path_x = pred_path_normalized(:, 1) * real_dim(1) * vis_scale;
+                pred_path_y = pred_path_normalized(:, 2) * real_dim(2) * vis_scale;
                 
                 N = length(pred_path_x);
                 segAlpha = linspace(alpha_start, alpha_end, N-1);
@@ -758,3 +793,34 @@ function [velocity_true, velocity_pred, error_len] = calculateVelocity(true_path
     velocity_pred = sqrt(sum((pred_steps).^2, 2));
     error_len = numel(velocity_true);
 end
+
+
+%%
+N = size(path,1);
+test_interocular_dist_set = [0.5, 1.0];
+figure; hold on
+for i = 1:length(test_interocular_dist_set)
+    test_interocular_dist = test_interocular_dist_set(i);
+    distances = linspace(21, 4, N);                       % linearly from 21 cm to 4 cm
+    if exist('binocular_disparity','file')==2 || exist('binocular_disparity','builtin')==5
+        disparity_deg = arrayfun(@(d) binocular_disparity(test_interocular_dist, d), distances);
+    else
+        disparity_deg = 2 * atand((test_interocular_dist/2) ./ distances);   % fallback formula
+    end
+
+    disparity_deg = disparity_deg(:);  
+    plot(distances, disparity_deg');
+end
+xlim([4 21]);
+xticks(4:8:20);
+xticklabels(arrayfun(@(x) sprintf('%d', x), 4:8:20, 'UniformOutput', false));
+yticks(0:7:14);
+yticklabels(arrayfun(@(y) sprintf('%d', y), 0:7:14, 'UniformOutput', false));
+ylim([0 15]);
+xlabel('Distance to Object (cm)'); ylabel('Disparity (deg)');
+title('Disparity vs Distance for Given Interocular Distance');
+box off
+
+save_file_name = fullfile(fig_save_folder, 'disparity_vs_distance');
+print(gcf, [save_file_name '.eps'], '-depsc', '-vector'); % EPS format
+print(gcf, [save_file_name '.png'], '-dpng', '-r300'); % PNG, 600 dpi

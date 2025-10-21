@@ -1,6 +1,6 @@
 clear; clc;
 %% ——— User picks which experiment to plot ———
-exp_id = 4;  
+exp_id = 3;  
 % 1: Noise contribution to ON/OFF grid
 % 2: Temporal filter biphasic
 % 3: Surround inhibition
@@ -37,7 +37,7 @@ switch exp_id
         fname_pattern = '%s_cricket_%s_disp%s_noise%s%s';
     case 3
         title_name    = '(Model) Fixed disparity test (trained dynamic)';
-        Dates         = {'2025100602'};
+        Dates         = {'2025101403'};  % 2025100602 2025101403
         Second_name   = 'disp';
         Second_level  = {'0.0', '3.0', '6.0', '12.0'};
         Noise_level   = {'0.016','0.032','0.064', '0.128','0.256'};
@@ -46,11 +46,11 @@ switch exp_id
                          '1.0', '0.0', '1.5'};
         plot_line_ids = [1:4];
         fname_pattern = '%s_cricket_%s_disp%s_noise%s%s';
-        exp_name_tag = 'fixed-disparity-test-ON';
+        exp_name_tag = 'fixed-disparity-test-OFF';
     
     case 4
-        title_name    = '(Model) Fixed disparity test (trained dynamic)';
-        Dates         = {'2025100506'};
+        title_name    = '(Model) Fixed disparity test (trained fixed)';
+        Dates         = {'2025100507'};
         Second_name   = 'disp';
         Second_level  = {'0.0', '3.0', '6.0', '12.0'};
         Noise_level   = {'0.016','0.032','0.064', '0.128','0.256'};
@@ -59,7 +59,7 @@ switch exp_id
                          '1.0', '0.0', '1.5'};
         plot_line_ids = [1:4];
         fname_pattern = '%s_cricket_%s_disp%s_noise%s%s';
-        exp_name_tag = 'fixed-disparity-test_fix_training_ON';
+        exp_name_tag = sprintf('fixed-disparity-test_fix_training_%s_ON', Dates{1});
     otherwise
         error('exp_id must be 1, 2 or 3');
 end
