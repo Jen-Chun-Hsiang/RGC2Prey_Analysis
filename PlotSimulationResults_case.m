@@ -1,6 +1,6 @@
 clear; clc;
 %% ——— User picks which experiment to plot ———
-exp_id = 19;  
+exp_id = 21;  
 % 1: Noise contribution to ON/OFF grid
 % 2: Temporal filter biphasic
 % 3: Surround inhibition
@@ -172,7 +172,7 @@ switch exp_id
         Noise_level   = {'0.016','0.032','0.064','0.128','0.256'};
         BG_folder     = repmat({'blend_'},1,length(Dates));
         LSTM_layer_n  = {'OFF-N', 'ON-T', 'OFF-T', 'ON-N', 'ON-N (c2)', 'ON-T (0.006)', 'ON-T (0.18)', 'ON-T (0.36)'};
-        plot_line_ids = [2 4]; % ON [2, 4], OFF [3, 1]
+        plot_line_ids = [3, 1]; % ON [4, 2], OFF [3, 1]
         fname_pattern = '%s_cricket_%snoise%s%s';
         exp_name_tag = 'oberserved-OFF';
 
@@ -182,7 +182,7 @@ switch exp_id
         Noise_level   = {'0.016','0.032','0.064','0.128','0.256'};
         BG_folder     = repmat({'blend_'},1,length(Dates));
         LSTM_layer_n  = {'ON-T (138)', 'ON-T (950)', 'OFF-T (138)', 'OFF-T (596)', 'ON-T (238)', 'OFF-T (149)', 'ON-T (475)', 'OFF-T (298)'};
-        plot_line_ids = [6 8 4]; % ON [1 5 7 2] OFF [3 6 8 4]
+        plot_line_ids = [5 7 2]; % ON [1 5 7 2] OFF [3 6 8 4]
         fname_pattern = '%s_cricket_%snoise%s%s';
         exp_name_tag = 'varied-density-constant-coverage-OFF';
 
@@ -211,7 +211,7 @@ switch exp_id
         Noise_level   = {'0.016','0.032','0.064','0.128','0.256'};
         BG_folder     = repmat({'blend_'},1,length(Dates));
         LSTM_layer_n  = {'ON-T',       'OFF-T',      'ON-T (0.006)', 'ON-T (0.18)', 'ON-T (0.36)', 'OFF-T (0.0)', 'OFF-T (0.124)', 'OFF-T (0.248)'};
-        plot_line_ids = [1 3 5];  % ON [1 3 5]OFF [2 6 8]
+        plot_line_ids = [2 6 8];  % ON [1 3 5]OFF [2 6 8]
         fname_pattern = '%s_cricket_%snoise%s%s';
         exp_name_tag = 'center-surround-ON';
 
