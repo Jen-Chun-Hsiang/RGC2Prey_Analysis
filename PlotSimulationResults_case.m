@@ -1,6 +1,6 @@
 clear; clc;
 %% ——— User picks which experiment to plot ———
-exp_id = 29;  
+exp_id = 19;  
 % 1: Noise contribution to ON/OFF grid
 % 2: Temporal filter biphasic
 % 3: Surround inhibition
@@ -30,7 +30,7 @@ switch exp_id
         LSTM_layer_n  = {'Biphasic | drift','Monphasic | drift','Semibiphasic| drift','Biphasic | blend '};
         plot_line_ids = [1,2,3];
         fname_pattern = '%s_cricket_noise%s%s';
-        
+
     case 3
         title_name    = '(Model) Surround inhibition';
         Dates         = {'2025030701','2025030702','2025030703','2025030704', ...
@@ -172,7 +172,7 @@ switch exp_id
         Noise_level   = {'0.016','0.032','0.064','0.128','0.256'};
         BG_folder     = repmat({'blend_'},1,length(Dates));
         LSTM_layer_n  = {'OFF-N', 'ON-T', 'OFF-T', 'ON-N', 'ON-N (c2)', 'ON-T (0.006)', 'ON-T (0.18)', 'ON-T (0.36)'};
-        plot_line_ids = [3 1];
+        plot_line_ids = [2 4]; % ON [2, 4], OFF [3, 1]
         fname_pattern = '%s_cricket_%snoise%s%s';
         exp_name_tag = 'oberserved-OFF';
 
@@ -191,7 +191,7 @@ switch exp_id
         Dates         = {'2025091802',  '2025091803',   '2025092107',  '2025092108',   '2025091812',   '2025092109',  '2025092110'};  
         Noise_level   = {'0.016','0.032','0.064','0.128','0.256'};
         LSTM_layer_n  = {'ON-T (0.54)', 'OFF-T (0.54)', 'ON-T (0.76)', 'OFF-T (0.76)', 'ON-T 2 (0.54)', 'ON-T (0.382)', 'OFF-T (0.382)'};
-        plot_line_ids = [7 2 4];  % ON [6 1 3] OFF [7 2 4]
+        plot_line_ids = [6 1 3];  % ON [6 1 3] OFF [7 2 4]
         BG_folder     = repmat({'blend_'},1,length(Dates));
         fname_pattern = '%s_cricket_%snoise%s%s';
         exp_name_tag = 'varied-coverage-constant-density-OFF';
@@ -418,17 +418,17 @@ for i = 1:N_days
             case 'grass'
                 DataP_m(i, j)  = mean(all_fixed_rms(~is_simple_contrast, :), 'all');
                 DataP_s(i, j)  = std(mean(all_fixed_rms(~is_simple_contrast, :), 1))/sqrt(sum(~is_simple_contrast));
-                DataP_v(i, j, 1:sum(~is_simple_contrast)) = mean(all_fixed_rms(~is_simple_contrast, :), 2);
+                DataP_v(i, j, ~is_simple_contrast) = mean(all_fixed_rms(~is_simple_contrast, :), 2);
                 DataCM_m(i, j)  = mean(all_fixed_cm_rms(~is_simple_contrast, :), 'all');
                 DataCM_s(i, j)  = std(mean(all_fixed_cm_rms(~is_simple_contrast, :), 1))/sqrt(sum(~is_simple_contrast));
-                DataCM_v(i, j, 1:sum(~is_simple_contrast)) = mean(all_fixed_cm_rms(~is_simple_contrast, :), 2);
+                DataCM_v(i, j, ~is_simple_contrast) = mean(all_fixed_cm_rms(~is_simple_contrast, :), 2);
             case 'simple'
                 DataP_m(i, j)  = mean(all_fixed_rms(is_simple_contrast, :), 'all');
                 DataP_s(i, j)  = std(mean(all_fixed_rms(is_simple_contrast, :), 1))/sqrt(sum(is_simple_contrast));
-                DataP_v(i, j, 1:sum(is_simple_contrast)) = mean(all_fixed_rms(is_simple_contrast, :), 2);
+                DataP_v(i, j, is_simple_contrast) = mean(all_fixed_rms(is_simple_contrast, :), 2);
                 DataCM_m(i, j)  = mean(all_fixed_cm_rms(is_simple_contrast, :), 'all');
                 DataCM_s(i, j)  = std(mean(all_fixed_cm_rms(is_simple_contrast, :), 1))/sqrt(sum(is_simple_contrast));
-                DataCM_v(i, j, 1:sum(is_simple_contrast)) = mean(all_fixed_cm_rms(is_simple_contrast, :), 2);
+                DataCM_v(i, j, is_simple_contrast) = mean(all_fixed_cm_rms(is_simple_contrast, :), 2);
         otherwise
                 error('bg_type must be blend or grass or simple');
         end
@@ -437,8 +437,6 @@ for i = 1:N_days
     end
     Data_t(i, :) = training_losses(1:n_epoch);
 end
-DataCM_v = DataCM_v(:, :, ~isnan(DataCM_v(1, 1, :)));
-DataP_v  = DataP_v(:, :, ~isnan(DataP_v(1, 1, :)));
 x      = 1:N_levels;
 colors = lines(numel(unique_string));
 %%
