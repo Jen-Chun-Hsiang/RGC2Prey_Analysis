@@ -1,6 +1,6 @@
 clear; clc;
 %% ——— User picks which experiment to plot ———
-exp_id = 21;  
+exp_id = 29;  
 % 1: Noise contribution to ON/OFF grid
 % 2: Temporal filter biphasic
 % 3: Surround inhibition
@@ -288,16 +288,16 @@ switch exp_id
         exp_name_tag = sprintf('disparity-fixed-training-fixed-test-%s-ON', disparity_test);
 
     case 29
-        title_name    = '(Model) Interoccular distance (updated)';
+        title_name    = '(Model) Interoccular distance (updated, corrected)';
         Dates         = {'2025101402',  '2025101404',   '2025101405',  '2025101408',...
                          '2025101403',  '2025101406',   '2025101407',  '2025101409'};  
         Noise_level   = {'0.016','0.032','0.064','0.128','0.256'};
         LSTM_layer_n  = {'ON-T (1.0)', 'ON-T (0.0)', 'ON-T (0.2)', 'ON-T (0.5)',...
                          'OFF-T (1.0)',  'OFF-T (0.0)',  'OFF-T (0.2)', 'OFF-T (0.5)'};
-        plot_line_ids = [6 7 8 5];  % ON [2 1 3] OFF [5 4 6]
+        plot_line_ids = [2 4 1];  % ON [2 4 1] OFF [6 8 5]
         BG_folder     = repmat({'blend_'},1,length(Dates));
         fname_pattern = '%s_cricket_%snoise%s%s';
-        exp_name_tag = 'interoccular-distance-OFF';
+        exp_name_tag = 'interoccular-distance-ON';
 
     
     otherwise

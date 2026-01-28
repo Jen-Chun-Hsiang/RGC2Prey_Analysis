@@ -37,7 +37,7 @@ switch exp_id
         fname_pattern = '%s_cricket_%s_disp%s_noise%s%s';
     case 3
         title_name    = '(Model) Fixed disparity test (trained dynamic)';
-        Dates         = {'2025101403'};  % 2025100602 2025101403
+        Dates         = {'2025101403'};  % 2025100602 2025101403 2025101402
         Second_name   = 'disp';
         Second_level  = {'0.0', '3.0', '6.0', '12.0'};
         Noise_level   = {'0.016','0.032','0.064', '0.128','0.256'};
@@ -64,6 +64,10 @@ switch exp_id
         error('exp_id must be 1, 2 or 3');
 end
 
+if ~exist('exp_name_tag','var') || isempty(exp_name_tag)
+    exp_name_tag = sprintf('exp%d_%s', exp_id, Dates{1});
+end
+
 %% ——— Shared data‐loading and plotting code ———
 
 N_days   = numel(Second_level);
@@ -79,7 +83,7 @@ sf_scale = 0.54;
 pix_to_um = 4.375; % each pixel is 4.375 um
 real_dim = [120 90] * pix_to_um / sf_scale;
 is_correct_object_zone = true;
-bg_type = 'blend';
+bg_type = 'grass';  % 'blend', 'grass', 'simple'
 if ~exist('is_degree','var')
     is_degree = true;
 end
@@ -103,6 +107,7 @@ Data_v = [];
 DataP_v = [];
 DataCM_v = [];
 D_validation = [];
+KeyP = cell(N_days, N_levels);
 
 for i = 1:N_days
     for j = 1:N_levels
@@ -137,6 +142,10 @@ for i = 1:N_days
         all_paths_pred_r = squeeze(all_paths_pred);
         is_simple_contrast = cellfun(@(x) contains(x, 'gray_image'), all_bg_file);
         assert(n_sample == size(all_paths_r, 1), 'Mismatch in number of test samples and loaded paths');
+
+        % Store per-sample subject keys for paired stats across disparity levels
+        % (robust even if ordering differs across files).
+        KeyP{i, j} = makePredationSubjectKeys(all_id_numbers, all_bg_file);
 
         for ii = 1:n_sample
             true_path_trial = squeeze(all_paths_r(ii, :, :));
@@ -175,19 +184,43 @@ for i = 1:N_days
                 DataCM_s(i, j) = std(mean(all_fixed_cm_rms, 1))/sqrt(n_sample);
                 DataCM_v(i, j, 1:size(all_fixed_cm_rms,1)) = mean(all_fixed_cm_rms, 2);
             case 'grass'
-                DataP_m(i, j)  = mean(all_fixed_rms(~is_simple_contrast, :), 'all');
-                DataP_s(i, j)  = std(mean(all_fixed_rms(~is_simple_contrast, :), 1))/sqrt(sum(~is_simple_contrast));
-                DataP_v(i, j, 1:sum(~is_simple_contrast)) = mean(all_fixed_rms(~is_simple_contrast, :), 2);
-                DataCM_m(i, j) = mean(all_fixed_cm_rms(~is_simple_contrast, :), 'all');
-                DataCM_s(i, j) = std(mean(all_fixed_cm_rms(~is_simple_contrast, :), 1))/sqrt(sum(~is_simple_contrast));
-                DataCM_v(i, j, 1:sum(~is_simple_contrast)) = mean(all_fixed_cm_rms(~is_simple_contrast, :), 2);
+                n_grass = sum(~is_simple_contrast);
+                if n_grass == 0
+                    DataP_m(i, j) = NaN; DataP_s(i, j) = NaN;
+                    DataCM_m(i, j) = NaN; DataCM_s(i, j) = NaN;
+                else
+                    DataP_m(i, j)  = mean(all_fixed_rms(~is_simple_contrast, :), 'all');
+                    DataP_s(i, j)  = std(mean(all_fixed_rms(~is_simple_contrast, :), 1))/sqrt(n_grass);
+                    DataCM_m(i, j) = mean(all_fixed_cm_rms(~is_simple_contrast, :), 'all');
+                    DataCM_s(i, j) = std(mean(all_fixed_cm_rms(~is_simple_contrast, :), 1))/sqrt(n_grass);
+                end
+
+                % Preserve original sample indices (important for paired stats)
+                DataP_v(i, j, ~is_simple_contrast) = mean(all_fixed_rms(~is_simple_contrast, :), 2);
+                DataCM_v(i, j, ~is_simple_contrast) = mean(all_fixed_cm_rms(~is_simple_contrast, :), 2);
+
+                % Excluded samples stay as NaN
+                DataP_v(i, j, is_simple_contrast) = NaN;
+                DataCM_v(i, j, is_simple_contrast) = NaN;
             case 'simple'
-                DataP_m(i, j)  = mean(all_fixed_rms(is_simple_contrast, :), 'all');
-                DataP_s(i, j)  = std(mean(all_fixed_rms(is_simple_contrast, :), 1))/sqrt(sum(is_simple_contrast));
-                DataP_v(i, j, 1:sum(is_simple_contrast)) = mean(all_fixed_rms(is_simple_contrast, :), 2);
-                DataCM_m(i, j) = mean(all_fixed_cm_rms(is_simple_contrast, :), 'all');
-                DataCM_s(i, j) = std(mean(all_fixed_cm_rms(is_simple_contrast, :), 1))/sqrt(sum(is_simple_contrast));
-                DataCM_v(i, j, 1:sum(is_simple_contrast)) = mean(all_fixed_cm_rms(is_simple_contrast, :), 2);
+                n_simple = sum(is_simple_contrast);
+                if n_simple == 0
+                    DataP_m(i, j) = NaN; DataP_s(i, j) = NaN;
+                    DataCM_m(i, j) = NaN; DataCM_s(i, j) = NaN;
+                else
+                    DataP_m(i, j)  = mean(all_fixed_rms(is_simple_contrast, :), 'all');
+                    DataP_s(i, j)  = std(mean(all_fixed_rms(is_simple_contrast, :), 1))/sqrt(n_simple);
+                    DataCM_m(i, j) = mean(all_fixed_cm_rms(is_simple_contrast, :), 'all');
+                    DataCM_s(i, j) = std(mean(all_fixed_cm_rms(is_simple_contrast, :), 1))/sqrt(n_simple);
+                end
+
+                % Preserve original sample indices (important for paired stats)
+                DataP_v(i, j, is_simple_contrast) = mean(all_fixed_rms(is_simple_contrast, :), 2);
+                DataCM_v(i, j, is_simple_contrast) = mean(all_fixed_cm_rms(is_simple_contrast, :), 2);
+
+                % Excluded samples stay as NaN
+                DataP_v(i, j, ~is_simple_contrast) = NaN;
+                DataCM_v(i, j, ~is_simple_contrast) = NaN;
             otherwise
                 error('bg_type must be blend or grass or simple');
         end
@@ -195,10 +228,10 @@ for i = 1:N_days
     Data_t(i, :) = training_losses(1:n_epoch);
 end
 
-if ~isempty(DataCM_v)
-    DataCM_v = DataCM_v(:, :, ~isnan(DataCM_v(1, 1, :)));
-    DataP_v  = DataP_v(:, :, ~isnan(DataP_v(1, 1, :)));
-end
+% Note: do not trim the 3rd dimension based on a single slice.
+% For bg_type='grass' or 'simple', excluded samples are represented as NaN.
+% Keeping the original indexing avoids accidental misalignment across
+% noise levels or disparity conditions.
 
 x      = 1:N_levels;
 colors = lines(N_days);
@@ -289,4 +322,24 @@ end
 save_file_name = fullfile(fig_save_folder, sprintf('SummaryPredResultsDisparity_%s_%s_%s', exp_name_tag, bg_type, object_tag));
 print(gcf, [save_file_name '.eps'], '-depsc', '-vector'); % EPS format
 print(gcf, [save_file_name '.png'], '-dpng', '-r300'); % PNG, 600 dpi
+
+%% --- Stats: per-noise paired nonparam across disparity levels (key-matched) ---
+% Mirrors PlotSimulationResults_case.m usage, but matches samples via keys to
+% ensure the paired assumption holds even if file ordering differs.
+try
+    res = runFDR_ANOVA_nonparam_matched(DataP_v(plot_line_ids, :, :), KeyP(plot_line_ids, :));
+    sig = find(res.signif_levels);
+    if ~isempty(sig)
+        fprintf('\nFDR-significant noise levels (alpha=%.3f):\n', res.alpha);
+        for kk = 1:numel(sig)
+            j = sig(kk);
+            fprintf('  noise=%s | p=%.3g | q=%.3g | nMatched=%d\n', Noise_level{j}, res.pvals(j), res.qvals(j), res.n_matched_per_level(j));
+        end
+    else
+        fprintf('\nNo FDR-significant noise levels (alpha=%.3f).\n', res.alpha);
+    end
+catch ME
+    warning('Stats analysis failed: %s', ME.message);
+    res = [];
+end
 
