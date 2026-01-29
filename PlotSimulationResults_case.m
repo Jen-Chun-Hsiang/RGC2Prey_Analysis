@@ -393,11 +393,11 @@ for i = 1:N_days
                 all_fixed_cm_rms = zeros(n_sample, rms_len_cm);
             end
             if is_correct_object_zone
-                all_fixed_rms(ii, :) = max(0, double(fixed_rms(:))  - cut_off(:));
-                all_fixed_cm_rms(ii, :) = max(0, double(fixed_cm_rms(:))  - cut_off_cm(:));
+                all_fixed_rms(ii, :) = max(0, double(fixed_rms(:))'  - cut_off(:)');
+                all_fixed_cm_rms(ii, :) = max(0, double(fixed_cm_rms(:))'  - cut_off_cm(:)');
             else
-                all_fixed_rms(ii, :) = double(fixed_rms)';
-                all_fixed_cm_rms(ii, :) = double(fixed_cm_rms)';
+                all_fixed_rms(ii, :) = double(fixed_rms(:))';
+                all_fixed_cm_rms(ii, :) = double(fixed_cm_rms(:))';
             end
         end
         all_fixed_rms = all_fixed_rms * unit_factor;

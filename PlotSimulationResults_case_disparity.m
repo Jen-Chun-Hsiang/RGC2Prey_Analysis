@@ -37,7 +37,7 @@ switch exp_id
         fname_pattern = '%s_cricket_%s_disp%s_noise%s%s';
     case 3
         title_name    = '(Model) Fixed disparity test (trained dynamic)';
-        Dates         = {'2025101403'};  % 2025100602 2025101403 2025101402
+        Dates         = {'2025101402'};  % 2025100602 2025101403 2025101402
         Second_name   = 'disp';
         Second_level  = {'0.0', '3.0', '6.0', '12.0'};
         Noise_level   = {'0.016','0.032','0.064', '0.128','0.256'};
@@ -46,7 +46,7 @@ switch exp_id
                          '1.0', '0.0', '1.5'};
         plot_line_ids = [1:4];
         fname_pattern = '%s_cricket_%s_disp%s_noise%s%s';
-        exp_name_tag = 'fixed-disparity-test-OFF';
+        exp_name_tag = 'fixed-disparity-test-ON';
     
     case 4
         title_name    = '(Model) Fixed disparity test (trained fixed)';
@@ -83,7 +83,7 @@ sf_scale = 0.54;
 pix_to_um = 4.375; % each pixel is 4.375 um
 real_dim = [120 90] * pix_to_um / sf_scale;
 is_correct_object_zone = true;
-bg_type = 'grass';  % 'blend', 'grass', 'simple'
+bg_type = 'blend';  % 'blend', 'grass', 'simple'
 if ~exist('is_degree','var')
     is_degree = true;
 end
@@ -339,7 +339,7 @@ try
         fprintf('\nNo FDR-significant noise levels (alpha=%.3f).\n', res.alpha);
     end
 catch ME
-    warning('Stats analysis failed: %s', ME.message);
+    warning('PlotSimulationResults:StatsFailed', 'Stats analysis failed: %s', ME.message);
     res = [];
 end
 
