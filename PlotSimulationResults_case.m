@@ -1,6 +1,6 @@
 clear; clc;
 %% ——— User picks which experiment to plot ———
-exp_id = 29;  
+exp_id = 30;  
 % 1: Noise contribution to ON/OFF grid
 % 2: Temporal filter biphasic
 % 3: Surround inhibition
@@ -299,6 +299,25 @@ switch exp_id
         fname_pattern = '%s_cricket_%snoise%s%s';
         exp_name_tag = 'interoccular-distance-ON';
 
+    case 30
+        title_name    = '(Model) Contrast gain';
+        Dates         = {'2026021101',  '2026021102',   '2026021103',  '2026021104', '2026021105'};  
+        Noise_level   = {'0.016','0.032','0.064','0.128','0.256'};
+        LSTM_layer_n  = {'ON-T (None)', 'ON-T (1.0)', 'ON-T (2.0)', 'ON-T (0.5)', 'ON-T (0.25)'};
+        plot_line_ids = [3 2 4];  
+        BG_folder     = repmat({'blend_'},1,length(Dates));
+        fname_pattern = '%s_cricket_%snoise%s%s';
+        exp_name_tag = 'contrast-gain-ON';
+
+    case 31
+        title_name    = '(Model) Contrast gain OFF';
+        Dates         = {'2026021406',  '2026021407',   '2026021408',  '2026021409'};  
+        Noise_level   = {'0.016','0.032','0.064','0.128','0.256'};
+        LSTM_layer_n  = {'ON-T (None)', 'ON-T (1.0)', 'ON-T (2.0)', 'ON-T (0.5)'};
+        plot_line_ids = [3 2 4];  % 
+        BG_folder     = repmat({'blend_'},1,length(Dates));
+        fname_pattern = '%s_cricket_%snoise%s%s';
+        exp_name_tag = 'contrast-gain-OFF';
     
     otherwise
         error('exp_id must be 1, 2 or 3');
