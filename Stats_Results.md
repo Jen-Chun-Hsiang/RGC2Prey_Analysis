@@ -109,3 +109,54 @@
     qvals: [8.1766e-14 2.2051e-12 4.5417e-08 0.0022 0.0068]
     signif_levels: [1 1 1 1 1]
 
+# [Temporal shift ON] exp 32 - plot_line_ids = [1 4 5]
+    pvals: [3.8469e-07 3.9239e-05 2.5868e-05 5.0886e-04 0.0087]
+    qvals: [1.9234e-06 6.5399e-05 6.4670e-05 6.3608e-04 0.0087]
+    signif_levels: [1 1 1 1 1]
+    omnibus_test: {'friedman'  'friedman'  'friedman'  'friedman'  'friedman'}
+    n_total_per_level: [100 100 100 100 100]
+    n_complete_per_level: [48 48 48 48 48]
+    chi2_per_level: [29.5417 20.2917 21.1250 15.1667 9.5000]
+    kendallW_per_level: [0.3077 0.2114 0.2201 0.1580 0.0990]
+    effect_size_label: 'kendallW'
+    effect_size_per_level: [0.3077 0.2114 0.2201 0.1580 0.0990]
+
+# [Temporal shift OFF] exp 33 - plot_line_ids = [1 4 5]
+  pvals: [3.1514e-04 3.1514e-04 1.8535e-05 3.0864e-04 0.1032]
+  qvals: [3.9392e-04 3.9392e-04 9.2677e-05 3.9392e-04 0.1032]
+  signif_levels: [1 1 1 1 0]
+  omnibus_test: {'friedman'  'friedman'  'friedman'  'friedman'  'friedman'}
+  n_total_per_level: [100 100 100 100 100]
+  n_complete_per_level: [48 48 48 48 48]
+  chi2_per_level: [16.1250 16.1250 21.7917 16.1667 4.5417]
+  kendallW_per_level: [0.1680 0.1680 0.2270 0.1684 0.0473]
+  effect_size_label: 'kendallW'
+  effect_size_per_level: [0.1680 0.1680 0.2270 0.1684 0.0473]
+
+# [Contrast gain ON] exp 30 - plot_line_ids = [2 4 5]
+  pvals: [0.0123 0.0990 3.1514e-04 3.8469e-07 1.9751e-07]
+  qvals: [0.0154 0.0990 5.2523e-04 9.6172e-07 9.6172e-07]
+  signif_levels: [1 0 1 1 1]
+  omnibus_test: {'friedman'  'friedman'  'friedman'  'friedman'  'friedman'}
+  n_total_per_level: [100 100 100 100 100]
+  n_complete_per_level: [48 48 48 48 48]
+  chi2_per_level: [8.7917 4.6250 16.1250 29.5417 30.8750]
+  kendallW_per_level: [0.0916 0.0482 0.1680 0.3077 0.3216]
+  effect_size_label: 'kendallW'
+  effect_size_per_level: [0.0916 0.0482 0.1680 0.3077 0.3216]
+
+# [Contrast gain OFF] exp 31 - plot_line_ids = [1 2 3]
+  pvals: [0.1502 0.0874 4.4464e-05 2.4592e-08 3.3282e-09]
+  qvals: [0.1502 0.1092 7.4106e-05 6.1481e-08 1.6641e-08]
+  signif_levels: [0 0 1 1 1]
+  omnibus_test: {'friedman'  'friedman'  'friedman'  'friedman'  'friedman'}
+  n_total_per_level: [100 100 100 100 100]
+  n_complete_per_level: [48 48 48 48 48]
+  chi2_per_level: [3.7917 4.8750 20.0417 35.0417 39.0417]
+  kendallW_per_level: [0.0395 0.0508 0.2088 0.3650 0.4067]
+  effect_size_label: 'kendallW'
+  effect_size_per_level: [0.0395 0.0508 0.2088 0.3650 0.4067]
+
+
+
+

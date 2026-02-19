@@ -13,6 +13,7 @@
 % Set the experiment names in exp_names cell array and run the script
 % Plot are learned from plot_three_traces_gradient.m
 %% Configuration - Shared Variables
+clear; clc; 
 mat_folder = '\\storage1.ris.wustl.edu\kerschensteinerd\Active\Emily\RISserver\RGC2Prey\Results\Mats\';
 fig_save_folder = '\\storage1.ris.wustl.edu\kerschensteinerd\Active\Emily\RISserver\RGC2Prey\Summary\Illustrator\'; 
 bg_type = 'blend'; % or 'grass'
@@ -22,7 +23,9 @@ disparity_sets = {}; % e.g., {} to compare different experiments
 
 % Configure multiple experiments to compare
 exp_name_tag = 'Demo_only_center';
-exp_names = { '2025101402'}; % Add/modify experiment names here
+exp_names = {'2026021102'}; %94 Add/modify experiment names here
+% gain control (ON) ''2026021102', '2026021104', '2026021105' (OFF) '2026021106',  '2026021107',   '2026021108' (26)
+% temporal shift (ON) '2026021401', '2026021404', '2026021405' (OFF) , '2026021406', '2026021408', '2026021410' (94)
 % Fixed disparity training '2025100507', '2025100501',  '2025100502',  '2025100503', '2025100508','2025100504','2025100505','2025100506'
 % Interocular distance '2025101402',  '2025101408', '2025101404', '2025101403',  '2025101409', '2025101406' (29)
 % Interoccular distance '2025100604', '2025100605', '2025100602', '2025100606', '2025100607', '2025100603'
@@ -30,18 +33,18 @@ exp_names = { '2025101402'}; % Add/modify experiment names here
 % surround inhibition   '2025091805', '2025091802', '2025091807', '2025091808', '2025091803', '2025091810'
 % varied coverage       '2025092109', '2025091802', '2025092107', '2025092110', '2025091803', '2025092108'
 % varied density        '2025092105', '2025091802', '2025092102', '2025092106', '2025091803', '2025092104'
-color_ids = [3]; %, 8, 7, 6
-trial_id = 5; % Trial ID to visualize across experiments 16 34 5
-disp_trajectory_id = 1;
+color_ids = [3]; %3, 2, 1, 8, 7, 6
+trial_id = 26; % Trial ID to visualize across experiments 16 34 5
+disp_trajectory_id = [1, 2];
 is_y_axis_flip = true; % set true only for movie drawing
 is_plot_ground_truth = true;
-is_plot_pred_trace = false;
+is_plot_pred_trace = true;
 
 % Disparity shift trace control: 'none', 'left', or 'right'
 % 'none': use all_paths_pred_r as usual
 % 'left': replace predicted trace with top_img_positions_shifted (left eye)
 % 'right': replace predicted trace with top_img_disparity_positions_shifted (right eye)
-disparity_shift_trace = 'right'; % Options: 'none', 'left', 'right'
+disparity_shift_trace = 'none'; % Options: 'none', 'left', 'right'
 interocular_dist = 1.0; % Interocular distance in cm for reconstruction
 
 % Visual settings
@@ -150,8 +153,8 @@ baseColors = [
     0, 120, 180;   %11
     120, 120, 180; %12
 ]/255;
-true_color = baseColors(10, :); % Red for ground truth (for movie frame)
-%true_color = [0.4, 0.4, 0.4]; 
+%true_color = baseColors(10, :); % Brown for ground truth (for movie frame)
+true_color = [0.4, 0.4, 0.4]; 
 
 % Extend colors if needed
 if n_experiments > size(baseColors, 1)
@@ -318,7 +321,7 @@ for i = 1:n_experiments
     end
 end
 xlabel('Time (s)'); ylabel('Distance to cricket (deg)'); 
-ylim([0 32]); box off;
+ylim([0 35]); box off;
 yticks(0:15:30);
 yticklabels(arrayfun(@(y) sprintf('%d', y), 0:15:30, 'UniformOutput', false));
 xlim([0 t(end)]);
@@ -435,6 +438,8 @@ save_file_name = fullfile(fig_save_folder, sprintf('PredictionTrace_%s_%s_%d', o
 print(gcf, [save_file_name '.eps'], '-depsc', '-vector'); % EPS format
 print(gcf, [save_file_name '.png'], '-dpng', '-r300'); % PNG, 600 dpi
 
+keyboard
+%%
 %% 2. Fixed RMS and CM RMS as function of time frames across comparisons
 fprintf('Creating fixed RMS error comparison plots across %s...\n', lower(comparison_title_suffix));
 

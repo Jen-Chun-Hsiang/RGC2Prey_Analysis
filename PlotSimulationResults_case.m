@@ -300,24 +300,56 @@ switch exp_id
         exp_name_tag = 'interoccular-distance-ON';
 
     case 30
-        title_name    = '(Model) Contrast gain';
+        title_name    = '(Model) Contrast gain ON';
         Dates         = {'2026021101',  '2026021102',   '2026021103',  '2026021104', '2026021105'};  
         Noise_level   = {'0.016','0.032','0.064','0.128','0.256'};
         LSTM_layer_n  = {'ON-T (None)', 'ON-T (1.0)', 'ON-T (2.0)', 'ON-T (0.5)', 'ON-T (0.25)'};
-        plot_line_ids = [3 2 4];  
+        plot_line_ids = [2 4 5];  
         BG_folder     = repmat({'blend_'},1,length(Dates));
         fname_pattern = '%s_cricket_%snoise%s%s';
         exp_name_tag = 'contrast-gain-ON';
 
     case 31
         title_name    = '(Model) Contrast gain OFF';
-        Dates         = {'2026021406',  '2026021407',   '2026021408',  '2026021409'};  
+        Dates         = {'2026021106',  '2026021107',   '2026021108',  '2026021109'};  
         Noise_level   = {'0.016','0.032','0.064','0.128','0.256'};
-        LSTM_layer_n  = {'ON-T (None)', 'ON-T (1.0)', 'ON-T (2.0)', 'ON-T (0.5)'};
-        plot_line_ids = [3 2 4];  % 
+        LSTM_layer_n  = {'OFF-T (1.0)', 'OFF-T (0.5)', 'OFF-T (0.25)', 'OFF-T (2.0)'};
+        plot_line_ids = [1 2 3];  % 
         BG_folder     = repmat({'blend_'},1,length(Dates));
         fname_pattern = '%s_cricket_%snoise%s%s';
         exp_name_tag = 'contrast-gain-OFF';
+
+    case 32
+        title_name    = '(Model) Temporal shift ON';
+        Dates         = {'2026021401',  '2026021402',   '2026021403',  '2026021404', '2026021405'};  
+        Noise_level   = {'0.016','0.032','0.064','0.128','0.256'};
+        LSTM_layer_n  = {'ON-T (0)', 'ON-T (5)', 'ON-T (-10)', 'ON-T (-5)', 'ON-T (-20)'};
+        fixed_shift_extra_set = [0, 5, -10, -5, -20];
+        plot_line_ids = [1 4 5];  
+        BG_folder     = repmat({'blend_'},1,length(Dates));
+        fname_pattern = '%s_cricket_%snoise%s%s';
+        exp_name_tag = 'temporal-shift-ON';
+
+    case 33
+        title_name    = '(Model) Temporal shift OFF';
+        Dates         = {'2026021406',  '2026021407',   '2026021408',  '2026021409', '2026021410'};  
+        Noise_level   = {'0.016','0.032','0.064','0.128','0.256'};
+        LSTM_layer_n  = {'OFF-T (0)', 'OFF-T (5)', 'OFF-T (-5)', 'OFF-T (-10)', 'OFF-T (-20)'};
+        fixed_shift_extra_set = [0, 5, -5, -10, -20];
+        plot_line_ids = [1 3 5];  
+        BG_folder     = repmat({'blend_'},1,length(Dates));
+        fname_pattern = '%s_cricket_%snoise%s%s';
+        exp_name_tag = 'temporal-shift-OFF';
+    
+    case 34
+        title_name    = '(Model) Consistency test';
+        Dates         = {'2026021401', '2025091802'};  
+        Noise_level   = {'0.016','0.032','0.064','0.128','0.256'};
+        LSTM_layer_n  = {'New', 'Old'};
+        plot_line_ids = [2 1];  
+        BG_folder     = repmat({'blend_'},1,length(Dates));
+        fname_pattern = '%s_cricket_%snoise%s%s';
+        exp_name_tag = 'consistency-test';
     
     otherwise
         error('exp_id must be 1, 2 or 3');
@@ -333,6 +365,10 @@ cover_radius = [cover_radius.file_index_list(:) cover_radius.processed_cover_rad
 N_days   = numel(Dates);
 N_levels = numel(Noise_level);
 fixed_shift = -9;
+% If fixed_shift_set is not defined, use the single fixed_shift value for all days
+if ~exist('fixed_shift_extra_set', 'var')
+    fixed_shift_extra_set = zeros(1, N_days);
+end
 sf_scale = 0.54;
 is_degree = true;
 pix_to_um = 4.375; % each pixel is 4.375 um
@@ -402,10 +438,11 @@ for i = 1:N_days
             pred_cm_path_trial = squeeze(all_path_cm(ii, :, :));
             true_path_scaled = true_path_trial .* reshape(real_dim, [1 2]);
             % pred_path_scaled = pred_path_trial .* reshape(real_dim, [1 2]);
-            cut_off = acceptance_zone_radius(double(all_id_numbers(ii)), all_scaling_factors(ii, 50:end), cover_radius, fixed_shift);
-            cut_off_cm = acceptance_zone_radius(double(all_id_numbers(ii)), all_scaling_factors(ii, 50:end), cover_radius, fixed_shift);
-            [fixed_rms, rms_len] = calculateFixedShiftRMSError(true_path_trial, pred_path_trial, fixed_shift, real_dim);
-            [fixed_cm_rms, rms_len_cm] = calculateFixedShiftRMSError(true_path_scaled, pred_cm_path_trial* pix_to_um / sf_scale, fixed_shift, ones(1, 2));
+            current_shift = fixed_shift_extra_set(i)+fixed_shift;
+            cut_off = acceptance_zone_radius(double(all_id_numbers(ii)), all_scaling_factors(ii, 50:end), cover_radius, current_shift);
+            cut_off_cm = acceptance_zone_radius(double(all_id_numbers(ii)), all_scaling_factors(ii, 50:end), cover_radius, current_shift);
+            [fixed_rms, rms_len] = calculateFixedShiftRMSError(true_path_trial, pred_path_trial, current_shift, real_dim);
+            [fixed_cm_rms, rms_len_cm] = calculateFixedShiftRMSError(true_path_scaled, pred_cm_path_trial* pix_to_um / sf_scale, current_shift, ones(1, 2));
     
             if ii == 1
                 all_fixed_rms = zeros(n_sample, rms_len);
@@ -486,9 +523,9 @@ legend(legs, 'Location', 'best');
 xlabel('Noise levels')
 xticks(1:numel(Noise_level)); xticklabels(Noise_level);
 xlim([0.5 numel(Noise_level)+0.5]);
-ylim([0 12]);
-yticks(0:6:12);
-yticklabels(string(num2cell(0:6:12)));
+ylim([4 12]);
+yticks(4:4:12);
+yticklabels(string(num2cell(4:4:12)));
 if is_degree
     ylabel('Error dist. (degrees)');
 else
